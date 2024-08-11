@@ -1,54 +1,61 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
 // import 'package:http/http.dart' as http;
 // import 'dart:convert' show json;
-import 'package:flutter/foundation.dart';
-import 'dart:async';
-
-
 
 class AuthService with ChangeNotifier {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-    ],
-    clientId: '471955095135-a4l01pd92gi4do8l8t8omp0t7032q4rj.apps.googleusercontent.com'
+    scopes: ['email'],
   );
 
-  bool get isLoggedIn => _googleSignIn.currentUser!= null;
+  GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
+
+  bool get isLoggedIn => currentUser != null;
 
   Future<void> signInWithGoogle() async {
     try {
-      final user = await _googleSignIn.signInSilently();
-      if (user != null) {
-        // User is signed in, you can access their email address
-        final email = user.email;
-        print('Signed in with email: $email');
-      } else {
-        // User is not signed in, prompt them to sign in
-        await _googleSignIn.signIn();
+      final googleUser = await _googleSignIn.signInSilently();
+      if (googleUser != null) {
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        // Sign in to Firebase with the Google credential
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+
+        print('Signed in with email: ${userCredential.user?.email}');
       }
+      notifyListeners(); // Notify listeners about the sign-in status
     } catch (e) {
       print('Error signing in with Google: $e');
     }
+    print("signin process completed");
   }
 
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();
-       _googleSignIn.currentUser!= null;
-      notifyListeners();
+      await FirebaseAuth.instance.signOut();
+      print('Signed out successfully');
+      notifyListeners(); // Notify listeners about the sign-out status
     } catch (e) {
       print('Error signing out with Google: $e');
     }
   }
 
   // Future<void> getContactInformation() async {
-  //   if (_currentUser == null) return;
+  //   if (currentUser == null) return;
   //   final http.Response response = await http.get(
   //     Uri.parse('https://people.googleapis.com/v1/people/me/connections'
   //         '?requestMask.includeField=person.names'),
-  //     headers: await _currentUser!.authHeaders,
+  //     headers: await currentUser!.authHeaders,
   //   );
   //   if (response.statusCode != 200) {
   //     print('Error getting contact information: ${response.statusCode}');

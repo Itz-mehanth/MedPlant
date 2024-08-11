@@ -2,9 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:medicinal_plant/auth.dart';
 import 'package:medicinal_plant/login_register_page.dart';
-import 'package:medicinal_plant/structures/user.dart';
 import 'package:medicinal_plant/widget_tree.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -37,23 +35,20 @@ final user = FirebaseAuth.instance.currentUser;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< HEAD
       body: Container(
         color: Colors.white,
-=======
-      backgroundColor: Colors.white,  // Set background color to white
-      body: SizedBox(
->>>>>>> 4672319b139f71216b57346d6f424e600ca1db9f
-        height: double.infinity,
-        width: MediaQuery.of(context).size.width,
-        child: Center(
-          child: Lottie.asset(
-            'assets/animations/plantgrowth.json',
-            fit: BoxFit.contain,
-            repeat: false
+        child: SizedBox(
+          height: double.infinity,
+          width: MediaQuery.of(context).size.width,
+          child: Center(
+            child: Lottie.asset(
+              'assets/animations/plantgrowth.json',
+              fit: BoxFit.contain,
+              repeat: false
+            ),
           ),
         ),
-      ),
+      )
     );
   }
 }

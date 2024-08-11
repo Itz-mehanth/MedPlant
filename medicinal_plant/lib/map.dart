@@ -20,24 +20,26 @@ class _MapPageState extends State<MapPage> {
           Expanded(
             child: FlutterMap(
               options: const MapOptions(
-                  initialZoom: 15, initialCenter: LatLng(12.751824, 80.23277)),
+                initialZoom: 15,
+                initialCenter: LatLng(12.751824, 80.23277),
+              ),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'dev.fleafnet.flutter_map.example',
                 ),
-                const MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: LatLng(12.751824, 80.23277),
+                MarkerLayer(
+                  markers: widget.markers.map((marker) {
+                    return Marker(
+                      point: LatLng(marker[0], marker[1]),
                       width: 80,
                       height: 80,
-                      child: Icon(
+                      child: const Icon(
                         Icons.location_on,
                         color: Colors.red,
                       ),
-                    ),
-                  ],
+                    );
+                  }).toList(),
                 ),
               ],
             ),

@@ -257,7 +257,7 @@ class _SearchPageState extends State<SearchPage> {
         });
 
         // Start a timer to stop listening after a certain period
-        _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
           if (_speechToText.isListening) {
             final elapsed =
                 DateTime.now().difference(_startListeningTimestamp!);

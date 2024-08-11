@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:medicinal_plant/forget_password.dart';
-import 'package:medicinal_plant/google_signin.dart';
 import 'package:medicinal_plant/google_signin_web.dart';
 import 'package:medicinal_plant/home_page.dart';
 import 'package:medicinal_plant/utils/global_functions.dart';
@@ -190,7 +189,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }
 
   Future<void> reloadAndNavigate() async {
-    _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       try {
         final user = FirebaseAuth.instance.currentUser!;
         await user.reload();
@@ -382,7 +381,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TranslatedText(
-        '$errorMessage',
+        errorMessage,
         style: const TextStyle(color: Colors.red, fontSize: 12),
       ),
     );
@@ -431,8 +430,16 @@ class _LoginPageState extends ConsumerState<LoginPage>
         text: 'Sign up with Google',
         onPressed: () async {
           print("signing in with google");
-          authService.signInWithGoogle(); // Await the loginWithGoogle() method
-          // Handle successful login (e.g., navigate to home screen)
+          await authService.signInWithGoogle();
+          print("Checking signin completion"); // Await the loginWithGoogle() method
+          if (FirebaseAuth.instance.currentUser != null) {
+            print("Redirecting to home page");
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+            print("Redirect failed");
+          } else {
+            print("user is not found");
+          }
         },
       ),
     );

@@ -282,7 +282,7 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
         }
       });
     } catch (e) {
-      print('${e}');
+      print('$e');
     }
   }
 
@@ -362,10 +362,10 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
                               child: IconButton(
                                 padding: const EdgeInsets.all(2),
                                 icon: Icon(Icons.star_sharp,
-                                    color: !widget.isFav
-                                        ? Colors.black54
-                                        : const Color.fromARGB(
-                                            255, 255, 191, 0)),
+                                    color: (widget.isFav && FirebaseAuth.instance.currentUser != null)
+                                  ? const Color.fromARGB(255, 255, 191, 0) // Yellow if favorite and user exists
+                                  : Colors.black54, // Otherwise black54
+                                ),
                                 color: colorAnimation.value,
                                 iconSize: 24,
                                 onPressed: (FirebaseAuth.instance.currentUser != null) ?
@@ -915,7 +915,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                           },
                         ),
                       )
-                    : Expanded(
+                    : (FirebaseAuth.instance.currentUser != null) ? Expanded(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             // Calculate item width
@@ -951,7 +951,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                             );
                           },
                         ),
-                      ))
+                      ) :
+                      const SizedBox()
+                      )
           ],
         ),
       ),

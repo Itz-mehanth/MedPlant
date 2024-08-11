@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:medicinal_plant/map.dart';
@@ -10,6 +11,8 @@ class PlantDetailsPage extends StatefulWidget {
   String scientificName = '';
   String family = '';
   List<String> imageUrls = [];
+  List<List<double>> coordinatesList = [];
+
 
   PlantDetailsPage(
       {super.key,
@@ -27,6 +30,7 @@ class _PlantDetailsPage extends State<PlantDetailsPage> {
   void initState() {
     super.initState();
     fetchRandomImageUrls(widget.plantName);
+    fetchPlantCoordinates();
   }
 
   Future<void> fetchRandomImageUrls(String plantName) async {
@@ -188,9 +192,12 @@ class _PlantDetailsPage extends State<PlantDetailsPage> {
             decoration: const BoxDecoration(color: Colors.white),
             child: ElevatedButton(
               onPressed: () {
-                Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const MapPage([[12.751824,80.23277]]))
-                );
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => MapPage(
+                              widget.coordinatesList
+                            )));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 0, 255, 8),
@@ -217,5 +224,49 @@ class _PlantDetailsPage extends State<PlantDetailsPage> {
         ]),
       ),
     );
+  }
+  
+  Future<void> fetchPlantCoordinates() async {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('plant_details')
+          .where('Common Name', isEqualTo: widget.plantName)
+          .get();
+      List<QueryDocumentSnapshot> docs = querySnapshot.docs;
+
+      if (docs.isNotEmpty) {
+      
+        // Query the 'coordinates' subcollection inside the document
+        QuerySnapshot coordinatesSnapshot = await FirebaseFirestore.instance
+            .collection('plant_details')
+            .doc(widget.plantName)
+            .collection('coordinates')
+            .get();
+
+        List<QueryDocumentSnapshot> coordinatesDocs = coordinatesSnapshot.docs;
+
+        // Process the coordinates data
+        if (coordinatesDocs.isNotEmpty) {
+          for (var coordinateDoc in coordinatesDocs) {
+            final coordinateData = coordinateDoc.data() as Map<String, dynamic>;
+            GeoPoint geoPoint = coordinateData['location']; // Assuming 'location' is the field name
+
+            double latitude = geoPoint.latitude;
+            double longitude = geoPoint.longitude;
+          
+            widget.coordinatesList.add([latitude, longitude]);
+
+
+          }
+        } else {
+          print('No coordinates found for this plant.');
+        }
+      } else {
+        print('No plant details found for the given name.');
+      }
+    } catch (e) {
+      print('Error fetching plant details or coordinates: $e');
+    }
+
   }
 }
