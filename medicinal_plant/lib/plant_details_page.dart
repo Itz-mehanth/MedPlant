@@ -137,7 +137,7 @@ class _PlantDetailsPage extends State<PlantDetailsPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Text(
+                    TranslatedText(
                       widget.plantDescription,
                       style: const TextStyle(fontSize: 16),
                     ),
@@ -150,13 +150,13 @@ class _PlantDetailsPage extends State<PlantDetailsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const TranslatedText(
-                              'SCIENTIFIC NAME:',
+                              'SCIENTIFIC NAME',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Color.fromARGB(255, 80, 255, 85),
                               ),
                             ),
-                            Text(
+                            TranslatedText(
                               widget.scientificName,
                               style: const TextStyle(fontSize: 16),
                             ),
@@ -166,7 +166,7 @@ class _PlantDetailsPage extends State<PlantDetailsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const TranslatedText(
-                              'FAMILY:',
+                              'FAMILY',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Color.fromARGB(255, 80, 255, 85),

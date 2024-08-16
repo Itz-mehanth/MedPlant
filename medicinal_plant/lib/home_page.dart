@@ -952,7 +952,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                           },
                         ),
                       ) :
-                      const SizedBox()
+                      const Expanded(child: SizedBox())
                       )
           ],
         ),

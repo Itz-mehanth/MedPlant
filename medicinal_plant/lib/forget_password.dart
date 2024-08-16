@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:medicinal_plant/login_register_page.dart';
@@ -20,9 +19,9 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
   bool isPass = false;
 
   void toggleObscureText(bool newValue) {
-      setState(() {
-        isPass = newValue;
-      });
+    setState(() {
+      isPass = newValue;
+    });
   }
 
   @override
@@ -44,6 +43,7 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
     _controller.forward();
   }
 
+
   @override
   void dispose() {
     _controller.dispose();
@@ -51,89 +51,63 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
   }
 
   Widget entryField(
-  Future<String> titleFuture,
-  Future<String> hintFuture,
-  TextEditingController controller,
-  IconData iconType,
-  bool isPass,
-  bool obscureControl,
-  Function(bool)? toggleObscureText
-) {
-  return SizedBox(
-    height: 40,
-    width: 250,
-    child: Builder(
-      builder: (context) {
-        return FutureBuilder<List<String>>(
-          future: Future.wait([titleFuture, hintFuture]),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (snapshot.hasError) {
-              return Center(child: TranslatedText('Error: ${snapshot.error}'));
-            }
-
-            if (snapshot.hasData) {
-              final title = snapshot.data![0];
-              final hint = snapshot.data![1];
-
-              return TextField(
-                obscureText: isPass,
-                controller: controller,
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 2.0),
-                  labelText: title,
-                  labelStyle: const TextStyle(fontSize: 14),
-                  hintText: hint,
-                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-                  border: const OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.grey,
-                      width: 1.0,
+      Future<String> titleFuture,
+      Future<String> hintFuture,
+      TextEditingController controller,
+      IconData iconType,
+      bool isPass,
+      bool obscureControl,
+      Function(bool)? toggleObscureText) {
+    return SizedBox(
+        height: 40,
+        width: 250,
+        child: TextField(
+          obscureText: isPass,
+          controller: controller,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 2.0),
+            labelText: "Email",
+            labelStyle: const TextStyle(fontSize: 14),
+            hintText: "Enter you email",
+            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+            border: const OutlineInputBorder(
+              borderSide: BorderSide(
+                color: Colors.grey,
+                width: 1.0,
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+            floatingLabelStyle:
+                const TextStyle(color: Colors.greenAccent, fontSize: 12),
+            focusedBorder: const OutlineInputBorder(
+              borderSide: BorderSide(
+                color: Colors.greenAccent,
+                width: 2.0,
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+            prefixIcon: Icon(
+              iconType,
+              size: 20,
+            ),
+            suffixIcon: obscureControl
+                ? IconButton(
+                    icon: Icon(
+                      isPass ? Icons.visibility_off : Icons.visibility,
+                      size: 20,
                     ),
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                  floatingLabelStyle: const TextStyle(color: Colors.greenAccent, fontSize: 12),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.greenAccent,
-                      width: 2.0,
-                    ),
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                  prefixIcon: Icon(
-                    iconType,
-                    size: 20,
-                  ),
-                  suffixIcon: obscureControl
-                      ? IconButton(
-                          icon: Icon(
-                            isPass ? Icons.visibility_off : Icons.visibility,
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              if (toggleObscureText != null) {
-                                toggleObscureText(!isPass);
-                              }
-                            });
-                          },
-                        )
-                      : null,
-                ),
-              );
-            } else {
-              return const Center(child: TranslatedText('No data available'));
-            }
-          },
-        );
-      },
-    ),
-  );
-}
-
+                    onPressed: () {
+                      setState(() {
+                        if (toggleObscureText != null) {
+                          toggleObscureText(!isPass);
+                        }
+                      });
+                    },
+                  )
+                : null,
+          ),
+        ));
+  }
 
   resetPassword() async {
     setState(() {
@@ -141,9 +115,12 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
       errorMessage = '';
     });
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text);
+      await FirebaseAuth.instance
+          .sendPasswordResetEmail(email: emailController.text);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: TranslatedText('Password reset link sent to ${emailController.text}')),
+        SnackBar(
+            content: TranslatedText(
+                'Password reset link sent to ${emailController.text}')),
       );
     } catch (e) {
       setState(() {
@@ -154,15 +131,14 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
         isLoading = false;
       });
     }
-}
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          color: Color.fromARGB(255, 196, 255, 255)
-        ),
+        decoration:
+            const BoxDecoration(color: Color.fromARGB(255, 196, 255, 255)),
         height: MediaQuery.of(context).size.height,
         width: MediaQuery.of(context).size.width,
         child: Stack(
@@ -178,7 +154,7 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
               ),
             ),
             Positioned(
-              top: MediaQuery.of(context).size.height/3,
+              top: MediaQuery.of(context).size.height / 3,
               left: 0,
               right: 0,
               bottom: 0,
@@ -214,26 +190,26 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                           right: 0,
                           child: ClipRRect(
                             child: Container(
-                              margin: const EdgeInsets.all(1),
-                              decoration: BoxDecoration(
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
-                                    spreadRadius: 2,
-                                    blurRadius: 5,
-                                    offset: const Offset(
-                                        0, 0), // changes position of shadow
+                                margin: const EdgeInsets.all(1),
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      spreadRadius: 2,
+                                      blurRadius: 5,
+                                      offset: const Offset(
+                                          0, 0), // changes position of shadow
+                                    ),
+                                  ],
+                                  color: Colors.white,
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(70),
+                                    topRight: Radius.circular(70),
                                   ),
-                                ],
-                                color: Colors.white,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(70),
-                                  topRight: Radius.circular(70),
                                 ),
-                              ),
-                              padding: const EdgeInsets.only(
-                                  top: 40, bottom: 10, left: 20, right: 20),
-                              child: Column(
+                                padding: const EdgeInsets.only(
+                                    top: 40, bottom: 10, left: 20, right: 20),
+                                child: Column(
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
@@ -250,7 +226,8 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Center(
                                             child: SizedBox(
@@ -259,16 +236,22 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                               child: ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
                                                   shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(50),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            50),
                                                   ),
-                                                  backgroundColor: const Color.fromARGB(255, 222, 136, 93),
+                                                  backgroundColor:
+                                                      const Color.fromARGB(
+                                                          255, 222, 136, 93),
                                                   foregroundColor: Colors.white,
                                                   padding: EdgeInsets.zero,
                                                 ),
                                                 onPressed: () {
                                                   Navigator.pushReplacement(
                                                     context,
-                                                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            const LoginPage()),
                                                   );
                                                 },
                                                 child: const Center(
@@ -299,16 +282,20 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                               child: ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
                                                   shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(25),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            25),
                                                   ),
-                                                  backgroundColor: const Color.fromARGB(255, 0, 255, 42),
+                                                  backgroundColor:
+                                                      const Color.fromARGB(
+                                                          255, 0, 255, 42),
                                                   foregroundColor: Colors.white,
                                                 ),
                                                 onPressed: resetPassword,
                                                 child: const Text("Send link"),
                                               ),
                                             ),
-                                            const SizedBox(
+                                          const SizedBox(
                                             width: 30,
                                           ),
                                         ],
@@ -317,15 +304,14 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                     if (errorMessage.isNotEmpty)
                                       Text(
                                         errorMessage,
-                                        style: const TextStyle(color: Colors.red),
+                                        style:
+                                            const TextStyle(color: Colors.red),
                                       )
-                                    else 
-                                    const SizedBox(height: 20)
-                                    ,
+                                    else
+                                      const SizedBox(height: 20),
                                     const SizedBox(height: 20),
                                   ],
-                                )
-                            ),
+                                )),
                           ),
                         )
                       ],
