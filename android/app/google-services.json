@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1085343678758",
+    "project_id": "medicinal-plant-82aa9",
+    "storage_bucket": "medicinal-plant-82aa9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085343678758:android:9a2029c33b8ed1017401e7",
+        "android_client_info": {
+          "package_name": "com.example.medicinal_plant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1085343678758-p8bau7oqp5injmnlik0n555s2nj44p40.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.medicinal_plant",
+            "certificate_hash": "428f339676856b6a5cd5fd6e4d436b182a57a18c"
+          }
+        },
+        {
+          "client_id": "1085343678758-v35fjludn62fbrsgje6mkeo5tadq8049.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrbOmzRVSMGhKGvjdI12fVUnSDfUGfWPY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1085343678758-v35fjludn62fbrsgje6mkeo5tadq8049.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
