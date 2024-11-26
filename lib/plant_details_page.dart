@@ -75,7 +75,7 @@ class _PlantDetailsPage extends State<PlantDetailsPage> {
             Navigator.of(context).pop();
           },
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 68, 255, 0),
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,

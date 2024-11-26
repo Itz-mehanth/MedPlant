@@ -2,7 +2,8 @@
   "project_info": {
     "project_number": "1085343678758",
     "project_id": "medicinal-plant-82aa9",
-    "storage_bucket": "medicinal-plant-82aa9.appspot.com"
+    "storage_bucket": "medicinal-plant-82aa9.appspot.com",
+    "databaseURL": "https://medicinal-plant-82aa9.firebaseio.com"
   },
   "client": [
     {

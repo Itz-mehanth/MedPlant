@@ -434,8 +434,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
           print("Checking signin completion"); // Await the loginWithGoogle() method
           if (FirebaseAuth.instance.currentUser != null) {
             print("Redirecting to home page");
-            // Navigator.push(context,
-            //     MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const WidgetTree()));
             print("Redirect failed");
           } else {
             print("user is not found");
@@ -509,8 +509,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 ),
               ),
               Positioned(
-                top: 10,
-                left: 10,
+                top: 30,
+                left: 20,
                 child: IconButton(
                   onPressed: () {
                     Navigator.push(
@@ -666,7 +666,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                             ),
                                         ],
 
-                                        // _errorMessage(),
                                         const SizedBox(height: 23),
                                         _submitButton(),
 

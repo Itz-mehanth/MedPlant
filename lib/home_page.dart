@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medicinal_plant/genAI.dart';
 import 'package:medicinal_plant/main.dart';
 import 'package:medicinal_plant/shimmer.dart';
 import 'package:flutter/material.dart';
@@ -871,6 +872,18 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                       gardenTabSelected,
                     ),
                   ),
+                  FloatingActionButton(
+                    onPressed: () {
+                      // Navigate to GenAIPage when button is clicked
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatBotPage(),
+                        ),
+                      );
+                    },
+                    child: Icon(Icons.question_answer), // Icon for FAB
+                  ),
                 ],
               ),
             ),
@@ -953,7 +966,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
               ),
             ) :
             const Expanded(child: SizedBox())
-            )
+            ),
           ],
         ),
       ),

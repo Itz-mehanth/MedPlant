@@ -19,7 +19,7 @@ class CameraPage extends StatefulWidget {
       List<CameraDescription> cameras = await availableCameras();
       if (cameras.isNotEmpty) {
         CameraController cameraController = CameraController(
-          cameras.last,
+          cameras.first,
           ResolutionPreset.high,
         );
         try {
@@ -85,9 +85,16 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   Future<File?> _imageCropper(File imageFile) async {
     final bytes = await imageFile.readAsBytes();
     final image = img.decodeImage(bytes);
+
     if (image != null) {
-      // Resize the image to a 224x224 thumbnail (for example)
-      final resizedImage = img.copyResize(image, width: 224, height: 224);
+      // Crop the image to a square (if not already square)
+      int cropSize = image.width < image.height ? image.width : image.height;
+      final croppedImage =
+          img.copyCrop(image, x: 0, y: 0, width: cropSize, height: cropSize);
+
+      // Resize the cropped image to 256x256 (or your preferred size)
+      final resizedImage =
+          img.copyResize(croppedImage, width: 256, height: 256);
 
       // Get the directory to save the resized image
       final directory = await getApplicationDocumentsDirectory();
@@ -101,12 +108,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
       return resizedImageFile;
     }
+
     return null;
   }
 
   Future<void> _pickImageFromGallery() async {
     final XFile? galleryPickedFile =
-    await picker.pickImage(source: ImageSource.gallery);
+        await picker.pickImage(source: ImageSource.gallery);
     if (galleryPickedFile != null) {
       print("image picked successfully");
       // File? croppedImage = await _imageCropper(File(galleryPickedFile.path));
@@ -115,7 +123,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         image = galleryPickedFileAsFile;
         imageSelected = true;
       });
-      print('Gallery image selected:${image != null} ${galleryPickedFile.path}');
+      print(
+          'Gallery image selected:${image != null} ${galleryPickedFile.path}');
     } else {
       print('No image selected from gallery');
     }
@@ -142,149 +151,158 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     return Scaffold(
       body: SizedBox(
         width: MediaQuery.of(context).size.width,
-        height:MediaQuery.of(context).size.height,
+        height: MediaQuery.of(context).size.height,
         child: Stack(
           children: [
-            Positioned.fill(
-              child: Column(
-                children: [
-                  image != null
-                      ? Expanded(
-                    child: kIsWeb
-                        ? Image.network(
-                      image!.path,
-                      fit: BoxFit.cover,
-                    )
-                        : Image.file(
-                      image!,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                      : cameraController != null &&
-                      cameraController!.value.isInitialized
-                      ? Expanded(child: CameraPreview(cameraController!))
-                      : Expanded(
-                    child: Center(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            style: BorderStyle.solid,
-                            color: Colors.black38,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Initializing camera...',
-                            style: TextStyle(
-                              color: Colors.black38,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              child: Container(
-                height: 50,
-                width: MediaQuery.of(context).size.width,
-                alignment: Alignment.centerLeft,
-                decoration: const BoxDecoration(color: Colors.black),
-                padding: const EdgeInsets.all(10),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) {
-                        return const WidgetTree();
-                      }),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              child: Container(
-                width:  MediaQuery.of(context).size.width,
-                decoration:
-                const BoxDecoration(color: Color.fromARGB(255, 0, 0, 0)),
-                child: imageSelected
-                    ? Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
+            Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 70,
+                    width: MediaQuery.of(context).size.width,
+                    alignment: Alignment.centerLeft,
+                    decoration: const BoxDecoration(color: Colors.black),
+                    padding: const EdgeInsets.all(10),
+                    child: IconButton(
                       icon: const Icon(
-                        Icons.done_rounded,
-                        size: 40,
+                        Icons.arrow_back,
                         color: Colors.white,
                       ),
                       onPressed: () {
-                        if (image != null) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                              const LeafPredictionApp(
-                                // image: image!,
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) {
+                            return const WidgetTree();
+                          }),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                image != null
+                    ? SizedBox(
+                        width: MediaQuery.of(context).size.width, // Full width
+                        height: MediaQuery.of(context)
+                            .size
+                            .width, // Same as width for square
+                        child: kIsWeb
+                            ? Image.network(
+                                image!.path,
+                                fit: BoxFit
+                                    .cover, // Ensures image covers the square box
+                              )
+                            : Image.file(
+                                image!,
+                                fit: BoxFit
+                                    .cover, // Ensures image covers the square box
+                              ),
+                      )
+                    : cameraController != null &&
+                            cameraController!.value.isInitialized
+                        ? Center(
+                            child: SizedBox(
+                              width: MediaQuery.of(context)
+                                  .size
+                                  .width, // Full width
+                              height: MediaQuery.of(context)
+                                  .size
+                                  .width, // Square height
+                              child: CameraPreview(cameraController!),
+                            ),
+                          )
+                        : Expanded(
+                            child: Center(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    style: BorderStyle.solid,
+                                    color: Colors.black38,
+                                  ),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'Initializing camera...',
+                                    style: TextStyle(
+                                      color: Colors.black38,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          );
-                        } else {
-                          print("image not found");
-                        }
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.cancel_outlined,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          imageSelected = false;
-                          image = null;
-                          setupCameraController();
-                        });
-                      },
-                    ),
-                  ],
-                )
-                    : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.folder,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                      onPressed: _pickImageFromGallery,
-                    ),
-                    IconButton(
-                      onPressed: _pickImageFromCamera,
-                      icon: const Icon(
-                        Icons.circle,
-                        color: Colors.white,
-                        size: 60,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                  ],
+                          ),
+                Expanded(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    decoration: const BoxDecoration(
+                        color: Color.fromARGB(255, 0, 0, 0)),
+                    child: imageSelected
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.done_rounded,
+                                  size: 40,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  if (image != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => LeafPredictionApp(
+                                          image: image!,
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    print("image not found");
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.cancel_outlined,
+                                  size: 40,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    imageSelected = false;
+                                    image = null;
+                                    setupCameraController();
+                                  });
+                                },
+                              ),
+                            ],
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.folder,
+                                  size: 40,
+                                  color: Colors.white,
+                                ),
+                                onPressed: _pickImageFromGallery,
+                              ),
+                              IconButton(
+                                onPressed: _pickImageFromCamera,
+                                icon: const Icon(
+                                  Icons.circle,
+                                  color: Colors.white,
+                                  size: 60,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                            ],
+                          ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),

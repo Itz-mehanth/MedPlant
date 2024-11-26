@@ -17,7 +17,8 @@ Future<void> main() async {
           projectId: "medicinal-plant-82aa9",
           messagingSenderId: "1085343678758",
           appId: "1:1085343678758:android:9a2029c33b8ed1017401e7",
-          storageBucket: 'medicinal-plant-82aa9.appspot.com'
+          storageBucket: 'medicinal-plant-82aa9.appspot.com',
+          databaseURL: "https://medicinal-plant-82aa9.firebaseio.com", // Add Database URL Here
       )
   );
 

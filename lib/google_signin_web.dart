@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService with ChangeNotifier {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: '1085343678758-v35fjludn62fbrsgje6mkeo5tadq8049.apps.googleusercontent.com',
     scopes: ['email'],
   );
 
@@ -16,28 +17,57 @@ class AuthService with ChangeNotifier {
 
   Future<void> signInWithGoogle() async {
     try {
-      final googleUser = await _googleSignIn.signInSilently();
-      if (googleUser != null) {
-        final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
+      // Try signing in silently (without user interaction)
+      GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
 
-        final OAuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
+      // If silent sign-in fails, prompt for manual sign-in
+      if (googleUser == null) {
+        print("Silent sign-in failed. Prompting manual sign-in.");
+        googleUser = await _googleSignIn.signIn();
 
-        // Sign in to Firebase with the Google credential
-        UserCredential userCredential =
-        await FirebaseAuth.instance.signInWithCredential(credential);
-
-        print('Signed in with email: ${userCredential.user?.email}');
+        if (googleUser == null) {
+          print("Manual sign-in was cancelled or failed.");
+          return; // Stop if sign-in was cancelled
+        }
+        print("Manual sign-in successful.");
+      } else {
+        print("Silent sign-in successful.");
       }
+
+      // Proceed only if googleUser is not null
+      if (googleUser != null) {
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+        // Check if authentication tokens are valid
+        if (googleAuth.accessToken != null && googleAuth.idToken != null) {
+          final OAuthCredential credential = GoogleAuthProvider.credential(
+            accessToken: googleAuth.accessToken,
+            idToken: googleAuth.idToken,
+          );
+
+          // Sign in to Firebase with the Google credential
+          UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+          if (userCredential.user != null) {
+            print('Signed in with email: ${userCredential.user?.email}');
+          } else {
+            print("Error: Firebase user is null.");
+          }
+        } else {
+          print("Error: Google authentication tokens are null.");
+        }
+      }
+      
       notifyListeners(); // Notify listeners about the sign-in status
     } catch (e) {
       print('Error signing in with Google: $e');
     }
-    print("signin process completed");
+
+    print("Sign-in process completed");
   }
+
+
+
 
   Future<void> signOut() async {
     try {

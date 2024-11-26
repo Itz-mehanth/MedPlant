@@ -68,6 +68,8 @@ dependencies:
   google_sign_in_web: ^0.12.4+2
   flutter_dotenv: ^5.0.0
   lottie: ^3.1.2
+  firebase_database: ^11.1.6
+  firebase_remote_config: ^5.1.5
 
 dev_dependencies:
   flutter_test:
@@ -111,7 +113,6 @@ flutter:
     - assets/cameraLogo.png
     - assets/userIcon.jpg
     - assets/notFound.jpg
-    - assets/model.tflite
     - assets/Leaf labels.txt
     - assets/Sounds/AI voice.mp3
     - assets/Sounds/cling.wav
