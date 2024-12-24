@@ -16,7 +16,6 @@ class _WidgetTreeState extends State<WidgetTree> {
   bool onHomePage = true;
   bool onProfilePage = false;
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,12 +129,7 @@ class _WidgetTreeState extends State<WidgetTree> {
                   CameraController? controller =
                       await CameraPage.setupCameraController();
                   if (controller != null) {
-                    Navigator.push(
-                      // ignore: use_build_context_synchronously
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const CameraPage()),
-                    );
+                    Navigator.pushNamed(context, '/camera');
                   }
                 },
               ),

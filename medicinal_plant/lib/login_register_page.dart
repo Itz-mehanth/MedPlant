@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:medicinal_plant/forget_password.dart';
 import 'package:medicinal_plant/google_signin_web.dart';
+import 'package:sign_in_button/sign_in_button.dart';
 import 'package:medicinal_plant/home_page.dart';
 import 'package:medicinal_plant/utils/global_functions.dart';
 import 'package:medicinal_plant/widget_tree.dart';
-import 'package:sign_in_button/sign_in_button.dart';
 import 'firebase_user_storage.dart';
 import '../auth.dart';
 
@@ -195,8 +195,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
         await user.reload();
         if (user.emailVerified) {
           timer.cancel();
-          Get.offAll(() =>
-              const WelcomeScreen()); // Navigate and remove previous screens
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const WidgetTree()),
+          );
         } else {
           // Handle the case where the email is still not verified (optional)
           Get.snackbar(
@@ -431,11 +434,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
         onPressed: () async {
           print("signing in with google");
           await authService.signInWithGoogle();
-          print("Checking signin completion"); // Await the loginWithGoogle() method
+          print(
+              "Checking signin completion"); // Await the loginWithGoogle() method
           if (FirebaseAuth.instance.currentUser != null) {
             print("Redirecting to home page");
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+            Navigator.pushNamed(context, '/home');
             print("Redirect failed");
           } else {
             print("user is not found");

@@ -70,11 +70,11 @@ dependencies:
   redacted: ^1.0.12
   google_sign_in_web: ^0.12.4+2
   flutter_dotenv: ^5.0.0
-
-
-
+  firebase_database: ^11.1.6
+  firebase_remote_config: ^5.1.5
 
   flutter_gen: any
+  go_router: ^14.6.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -109,6 +109,7 @@ flutter:
   - assets/welcome_image.png
   - assets/Ayurveda.png
   - assets/icons/google.png
+  - assets/icons/logo.png
   - assets/app_background.jpg
   - assets/animations/plantgrowth.json
   - assets/animations/microphone.json
@@ -118,7 +119,6 @@ flutter:
   - assets/cameraLogo.png
   - assets/userIcon.jpg
   - assets/notFound.jpg
-  - assets/model.tflite
   - assets/Leaf labels.txt
   - assets/Sounds/AI voice.mp3
   - assets/Sounds/cling.wav

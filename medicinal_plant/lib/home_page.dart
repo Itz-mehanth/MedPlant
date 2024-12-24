@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medicinal_plant/genAI.dart';
 import 'package:medicinal_plant/main.dart';
 import 'package:medicinal_plant/shimmer.dart';
 import 'package:flutter/material.dart';
@@ -54,8 +55,7 @@ class _SearchBarWidgetState extends State<PlantSearchBar> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context,
-            MaterialPageRoute(builder: ((context) => const SearchPage())));
+        Navigator.pushNamed(context, '/search');
       },
       child: Container(
         width: 280,
@@ -197,10 +197,7 @@ void showLoginPrompt(BuildContext context) {
         TextButton(
           onPressed: () {
             Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginPage()),
-            );
+            Navigator.pushNamed(context, '/login');
           },
           child: const TranslatedText('Login'),
         ),
@@ -293,8 +290,8 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
         : widget.plantDescription;
 
     return Container(
-      height: 142,
-      width: 370,
+      height: 155,
+      width: MediaQuery.of(context).size.width - 50,
       padding: const EdgeInsets.all(5),
       child: Row(
         children: [
@@ -328,7 +325,7 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
                         child: CachedNetworkImage(
                           imageUrl: snapshot.data!,
                           placeholder: (context, url) => const SizedBox(
-                            height: 142,
+                            height: 149,
                             width: 134,
                             child: Center(child: CircularProgressIndicator()),
                           ),
@@ -439,7 +436,7 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
                     bottom: BorderSide(color: Colors.black12),
                   ),
                 ),
-                height: 140,
+                height: 147,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -458,7 +455,7 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
                             ),
                           ),
                           SizedBox(
-                            height: 70,
+                            height: 75,
                             child: TranslatedText(
                               "$truncatedPlantDescription ... Read more",
                               style: const TextStyle(
@@ -475,7 +472,7 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
                       decoration: const BoxDecoration(
                         border: Border(top: BorderSide(color: Colors.black12)),
                       ),
-                      height: 33,
+                      height: 45,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -736,11 +733,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
   Future<void> signout(BuildContext context) async {
     await Auth().signOut();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const LoginPage(),
-      ),
-    );
+    Navigator.pushNamed(context, '/login');
   }
 
   Widget TopNavButton(String name, bool isSelected) {
@@ -870,6 +863,18 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                       "Garden",
                       gardenTabSelected,
                     ),
+                  ),
+                  FloatingActionButton(
+                    onPressed: () {
+                      // Navigate to GenAIPage when button is clicked
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatBotPage(),
+                        ),
+                      );
+                    },
+                    child: Icon(Icons.question_answer), // Icon for FAB
                   ),
                 ],
               ),

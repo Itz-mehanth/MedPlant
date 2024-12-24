@@ -15,40 +15,39 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
-final user = FirebaseAuth.instance.currentUser;
+  final user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
     super.initState();
     // Start the timer to navigate after a few seconds
     Timer(const Duration(seconds: 7), () {
-      // Navigate to the next screen after 3 seconds
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (BuildContext context) => user == null  ? const LoginPage() : user!.emailVerified ?  const WidgetTree() : const LoginPage(),
-        ),
-      );
+      // Navigate to the next screen after 3 seconds == n
+      user == null
+          ? Navigator.pushNamed(context, '/login')
+          : user!.emailVerified
+              ? Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (BuildContext context) => const WidgetTree()
+                  ),
+                )
+              : Navigator.pushNamed(context, '/login');
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: Colors.white,
-        child: SizedBox(
-          height: double.infinity,
-          width: MediaQuery.of(context).size.width,
-          child: Center(
-            child: Lottie.asset(
-              'assets/animations/plantgrowth.json',
-              fit: BoxFit.contain,
-              repeat: false
-            ),
-          ),
+        body: Container(
+      color: Colors.white,
+      child: SizedBox(
+        height: double.infinity,
+        width: MediaQuery.of(context).size.width,
+        child: Center(
+          child: Lottie.asset('assets/animations/plantgrowth.json',
+              fit: BoxFit.contain, repeat: false),
         ),
-      )
-    );
+      ),
+    ));
   }
 }

@@ -43,7 +43,6 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
     _controller.forward();
   }
 
-
   @override
   void dispose() {
     _controller.dispose();
@@ -247,12 +246,7 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                                   padding: EdgeInsets.zero,
                                                 ),
                                                 onPressed: () {
-                                                  Navigator.pushReplacement(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            const LoginPage()),
-                                                  );
+                                                  Navigator.pushNamed(context, '/login');
                                                 },
                                                 child: const Center(
                                                   child: Icon(

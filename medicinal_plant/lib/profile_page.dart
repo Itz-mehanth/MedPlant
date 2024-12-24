@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:medicinal_plant/gallery_page.dart';
 import 'package:medicinal_plant/auth.dart';
 import 'package:medicinal_plant/google_signin_web.dart';
 import 'package:medicinal_plant/home_page.dart';
@@ -168,10 +169,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       });
                       _updateUserLanguage(locales[_selectedOption]);
                       Navigator.pop(context);
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const SplashScreen()));
+                      Navigator.pushNamed(context, '/');
                     },
                   );
                 }).toList(),
@@ -254,11 +252,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   } else if (authService.isLoggedIn) {
                     authService.signOut();
                   } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginPage()),
-                    );
+                    Navigator.pushNamed(context, '/login');
                   }
                 },
                 style: ButtonStyle(
@@ -401,6 +395,48 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       width: 10,
                     ),
                     TranslatedText('Send Feedback'),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: 40,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/gallery');
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                    (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.hovered)) {
+                        return const Color.fromARGB(221, 228, 228, 228);
+                      }
+                      return Colors.white;
+                    },
+                  ),
+                  foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                    (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.hovered)) {
+                        return Colors.black;
+                      }
+                      return Colors.black;
+                    },
+                  ),
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                    const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero),
+                  ),
+                  padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
+                    EdgeInsets.zero,
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    SizedBox(width: 10),
+                    Icon(Icons.photo_library),
+                    SizedBox(width: 10),
+                    TranslatedText('Gallery'),
                   ],
                 ),
               ),

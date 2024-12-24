@@ -9,6 +9,9 @@ import 'package:path/path.dart' as path;
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:medicinal_plant/widget_tree.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -19,7 +22,7 @@ class CameraPage extends StatefulWidget {
       List<CameraDescription> cameras = await availableCameras();
       if (cameras.isNotEmpty) {
         CameraController cameraController = CameraController(
-          cameras.last,
+          cameras.first,
           ResolutionPreset.high,
         );
         try {
@@ -82,27 +85,27 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     super.dispose();
   }
 
-Future<File?> _imageCropper(File imageFile) async {
-  final bytes = await imageFile.readAsBytes();
-  final image = img.decodeImage(bytes);
-  if (image != null) {
-    // Resize the image to a 224x224 thumbnail (for example)
-    final resizedImage = img.copyResize(image, width: 224, height: 224);
+  Future<File?> _imageCropper(File imageFile) async {
+    final bytes = await imageFile.readAsBytes();
+    final image = img.decodeImage(bytes);
+    if (image != null) {
+      // Resize the image to a 224x224 thumbnail (for example)
+      final resizedImage = img.copyResize(image, width: 224, height: 224);
 
-    // Get the directory to save the resized image
-    final directory = await getApplicationDocumentsDirectory();
+      // Get the directory to save the resized image
+      final directory = await getApplicationDocumentsDirectory();
 
-    // Create a file in the directory
-    final resizedImagePath = path.join(directory.path, 'resized_image.jpg');
-    final resizedImageFile = File(resizedImagePath);
+      // Create a file in the directory
+      final resizedImagePath = path.join(directory.path, 'resized_image.jpg');
+      final resizedImageFile = File(resizedImagePath);
 
-    // Encode the image to JPEG format and write it to the file
-    await resizedImageFile.writeAsBytes(img.encodeJpg(resizedImage));
+      // Encode the image to JPEG format and write it to the file
+      await resizedImageFile.writeAsBytes(img.encodeJpg(resizedImage));
 
-    return resizedImageFile;
+      return resizedImageFile;
+    }
+    return null;
   }
-  return null;
-}
 
   Future<void> _pickImageFromGallery() async {
     final XFile? galleryPickedFile =
@@ -115,7 +118,8 @@ Future<File?> _imageCropper(File imageFile) async {
         image = galleryPickedFileAsFile;
         imageSelected = true;
       });
-      print('Gallery image selected:${image != null} ${galleryPickedFile.path}');
+      print(
+          'Gallery image selected:${image != null} ${galleryPickedFile.path}');
     } else {
       print('No image selected from gallery');
     }
@@ -123,18 +127,61 @@ Future<File?> _imageCropper(File imageFile) async {
 
   Future<void> _pickImageFromCamera() async {
     if (cameraController != null && cameraController!.value.isInitialized) {
-      final XFile cameraPickedFile = await cameraController!.takePicture();
-        print("image picked successfully");
-        // File? croppedImage = await _imageCropper(File(cameraPickedFile.path));
+      try {
+        // Take a picture
+        final XFile cameraPickedFile = await cameraController!.takePicture();
+        print("Image picked successfully");
+
+        // Convert to File
         File cameraPickedFileAsFile = File(cameraPickedFile.path);
+
         setState(() {
           image = cameraPickedFileAsFile;
           imageSelected = true;
         });
-          print('Camera image selected:${image != null} ${cameraPickedFile.path}');
+        print(
+            'Camera image selected: ${image != null} ${cameraPickedFile.path}');
+
+        // Upload image to Firebase Storage
+        String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+        final Reference firebaseStorageRef =
+            FirebaseStorage.instance.ref().child('uploads/$fileName');
+        final UploadTask uploadTask =
+            firebaseStorageRef.putFile(cameraPickedFileAsFile);
+
+        final TaskSnapshot taskSnapshot = await uploadTask;
+        final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+
+        print('Image uploaded to Firebase Storage: $downloadUrl');
+
+        // Save download URL inside the user's document in Firestore
+        final User? user = FirebaseAuth.instance.currentUser;
+
+        if (user != null) {
+          final DocumentReference userDocRef =
+              FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+          // Add the download URL to the user's document (e.g., under an "images" array field)
+          await userDocRef.update({
+            'images': FieldValue.arrayUnion([
+              {
+                'downloadUrl': downloadUrl,
+                'uploadedAt': DateTime.now(),
+              }
+            ]),
+          });
+
+          print('Download URL saved to user document in Firestore');
+        } else {
+          print('No user logged in!');
+        }
+      } catch (e) {
+        print('Error picking image and uploading: $e');
+      }
     } else {
       print('Camera is not initialized');
     }
+    cameraController?.dispose();
   }
 
   @override
@@ -142,7 +189,7 @@ Future<File?> _imageCropper(File imageFile) async {
     return Scaffold(
       body: SizedBox(
         width: MediaQuery.of(context).size.width,
-        height:MediaQuery.of(context).size.height,
+        height: MediaQuery.of(context).size.height,
         child: Stack(
           children: [
             Positioned.fill(
@@ -164,7 +211,7 @@ Future<File?> _imageCropper(File imageFile) async {
                               cameraController!.value.isInitialized
                           ? Expanded(child: CameraPreview(cameraController!))
                           : Expanded(
-                            child: Center(
+                              child: Center(
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
@@ -184,7 +231,7 @@ Future<File?> _imageCropper(File imageFile) async {
                                   ),
                                 ),
                               ),
-                          ),
+                            ),
                 ],
               ),
             ),
@@ -192,7 +239,7 @@ Future<File?> _imageCropper(File imageFile) async {
               top: 0,
               left: 0,
               child: Container(
-                height: 50,
+                height: 100,
                 width: MediaQuery.of(context).size.width,
                 alignment: Alignment.centerLeft,
                 decoration: const BoxDecoration(color: Colors.black),
@@ -217,7 +264,8 @@ Future<File?> _imageCropper(File imageFile) async {
               bottom: 0,
               left: 0,
               child: Container(
-                width:  MediaQuery.of(context).size.width,
+                width: MediaQuery.of(context).size.width,
+                height: 100,
                 decoration:
                     const BoxDecoration(color: Color.fromARGB(255, 0, 0, 0)),
                 child: imageSelected
@@ -232,15 +280,7 @@ Future<File?> _imageCropper(File imageFile) async {
                             ),
                             onPressed: () {
                               if (image != null) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const LeafPredictionApp(
-                                            // image: image!,
-                                            ),
-                                  ),
-                                );
+                                Navigator.pushNamed(context, '/leaf-prediction');
                               } else {
                                 print("image not found");
                               }
