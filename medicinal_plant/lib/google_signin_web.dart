@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 class AuthService with ChangeNotifier {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email'],
+    forceCodeForRefreshToken: true,
   );
 
   GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
@@ -16,7 +17,9 @@ class AuthService with ChangeNotifier {
 
   Future<void> signInWithGoogle() async {
     try {
-      final googleUser = await _googleSignIn.signInSilently();
+      final googleUser = await _googleSignIn.signInSilently(
+          reAuthenticate : true
+      );
       if (googleUser != null) {
         final GoogleSignInAuthentication googleAuth =
             await googleUser.authentication;

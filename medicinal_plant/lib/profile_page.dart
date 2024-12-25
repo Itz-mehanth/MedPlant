@@ -441,6 +441,48 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ),
             ),
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: 40,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/groups');
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                    (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.hovered)) {
+                        return const Color.fromARGB(221, 228, 228, 228);
+                      }
+                      return Colors.white;
+                    },
+                  ),
+                  foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                    (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.hovered)) {
+                        return Colors.black;
+                      }
+                      return Colors.black;
+                    },
+                  ),
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                    const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero),
+                  ),
+                  padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
+                    EdgeInsets.zero,
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    SizedBox(width: 10),
+                    Icon(Icons.photo_library),
+                    SizedBox(width: 10),
+                    TranslatedText('Groups'),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

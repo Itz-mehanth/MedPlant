@@ -72,6 +72,8 @@ dependencies:
   flutter_dotenv: ^5.0.0
   firebase_database: ^11.1.6
   firebase_remote_config: ^5.1.5
+  file_picker: ^5.0.1
+
 
   flutter_gen: any
   go_router: ^14.6.2

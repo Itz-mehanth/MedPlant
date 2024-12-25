@@ -7,6 +7,7 @@ import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:medicinal_plant/gallery_page.dart';
 import 'package:medicinal_plant/camera_page.dart';
+import 'package:medicinal_plant/groups_page%20.dart';
 import 'package:medicinal_plant/home_page.dart';
 import 'package:medicinal_plant/leaf_prediction_app.dart';
 import 'package:medicinal_plant/login_register_page.dart';
@@ -69,6 +70,7 @@ class MyApp extends StatelessWidget {
         '/camera': (context) => const CameraPage(),
         '/login': (context) => const LoginPage(),
         '/profile': (context) => const ProfilePage(),
+        '/groups': (context) => GroupsPage(),
         '/search': (context) => const SearchPage(),
         '/leaf-prediction': (context) => const LeafPredictionApp(),
       },

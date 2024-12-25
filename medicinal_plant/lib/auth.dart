@@ -8,7 +8,10 @@ class Auth {
 
 
   Future<void> loginWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    final GoogleSignInAccount? googleUser = await GoogleSignIn(
+      scopes: ['email'],
+      forceCodeForRefreshToken: true,
+    ).signIn();
 
     final GoogleSignInAuthentication? googleAuth =
         await googleUser?.authentication;
@@ -21,22 +24,46 @@ class Auth {
     await FirebaseAuth.instance.signInWithCredential(credential);
   }
 
-  Future<UserCredential?> signInWithEmailAndPassword(
-      {required String email, required String password}) async {
+  Future<UserCredential?> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
     try {
-      return await _firebaseAuth.signInWithEmailAndPassword(
-          email: email, password: password);
+      // Attempt to sign in with the provided credentials
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      print('Sign-in successful for user: ${userCredential.user?.email}');
+      return userCredential;
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'invalid-credential') {
-        print(
-            'The supplied auth credential is incorrect, malformed or has expired.');
-        // Handle reauthentication or ask the user to input correct credentials.
-      } else {
-        print('An unknown error occurred: ${e.message}');
+      // Handle FirebaseAuth-specific errors
+      switch (e.code) {
+        case 'user-not-found':
+          print('Error: No user found for that email.');
+          break;
+        case 'wrong-password':
+          print('Error: Incorrect password provided for that email.');
+          break;
+        case 'user-disabled':
+          print('Error: This user account has been disabled.');
+          break;
+        case 'invalid-email':
+          print('Error: The email address is not valid.');
+          break;
+        default:
+          print('FirebaseAuthException: ${e.message}');
       }
+    } catch (e) {
+      // Handle unexpected errors
+      print('Unexpected error: $e');
     }
+
+    // Return null if sign-in fails
     return null;
   }
+
 
   Future<void> signOut() async {
     try {
@@ -48,17 +75,21 @@ class Auth {
     }
   }
 
-  Future<UserCredential?> signUpWithEmailandPassword(
-      {required String email, required String password}) async {
-    try {
-    return await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email, password: password);
-    } catch (e) {
-      // ignore: avoid_print
-      // print(e);
-    }
-    return null;
+  Future<UserCredential?> signUpWithEmailandPassword({
+    required String email,
+    required String password,
+  }) async {
+      // Attempt to create user
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      print('User created successfully: ${userCredential.user?.email}');
+      return userCredential;
+
   }
+
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
 }

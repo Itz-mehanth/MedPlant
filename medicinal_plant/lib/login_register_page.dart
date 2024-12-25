@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -438,7 +437,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
               "Checking signin completion"); // Await the loginWithGoogle() method
           if (FirebaseAuth.instance.currentUser != null) {
             print("Redirecting to home page");
-            Navigator.pushNamed(context, '/home');
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const WidgetTree()),
+            );
             print("Redirect failed");
           } else {
             print("user is not found");
@@ -675,6 +678,15 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
                                         const SizedBox(
                                           height: 33,
+                                        ),
+
+                                        SizedBox(
+                                          child:
+                                            _registerErrorMessage != '' ?
+                                            Text(
+                                                _registerErrorMessage!
+                                            ) :
+                                            Text("")
                                         ),
                                         if (isLogin) ...[
                                           Column(
