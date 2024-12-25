@@ -313,6 +313,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         isLoading = false;
       });
     }
+
     storeUserDetails(_controllernameSignup.text, _controllerEmailSignup.text,
         _controllerpasswordSignup.text);
 
@@ -495,6 +496,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Widget build(BuildContext context) {
     final AuthService authService = AuthService();
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 68, 255, 0),
+        automaticallyImplyLeading: false,
+      ),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Container(

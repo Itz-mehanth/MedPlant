@@ -106,6 +106,8 @@ class _GroupsPageState extends State<GroupsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Groups"),
+        backgroundColor: const Color.fromARGB(255, 68, 255, 0),
+        automaticallyImplyLeading: true,
         actions: [
           IconButton(
             icon: Icon(Icons.search),
@@ -138,7 +140,7 @@ class _GroupsPageState extends State<GroupsPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => GroupDetailsPage(groupId: group['id']), // Pass the group ID
+                  builder: (context) => GroupChatPage(groupId: group['id'], groupName: group['name'],), // Pass the group ID
                 ),
               );
             },
@@ -242,6 +244,8 @@ class _SearchGroupsPageState extends State<SearchGroupsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Search Groups"),
+        backgroundColor: const Color.fromARGB(255, 68, 255, 0),
+        automaticallyImplyLeading: true,
       ),
       body: Column(
         children: [
@@ -275,7 +279,7 @@ class _SearchGroupsPageState extends State<SearchGroupsPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => GroupDetailsPage(groupId: group['id']),
+                        builder: (context) => GroupChatPage(groupId: group['id'], groupName: group['name'],),
                       ),
                     );
                   },

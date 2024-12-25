@@ -20,6 +20,7 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   User? user;
+  String? profileURL = FirebaseAuth.instance.currentUser!.photoURL;
   @override
   void initState() {
     super.initState();
@@ -184,7 +185,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _sendFeedback() async {
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'mehanth@example.com',
+      path: 'mehanth362@gmail.com',
       query: 'subject=Feedback&body=Your feedback here',
     );
     if (await canLaunchUrl(emailLaunchUri)) {
@@ -222,12 +223,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     height: 30,
                     width: 30,
                     decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        image: const DecorationImage(
-                            image: AssetImage(
-                              "assets/userIcon.jpg",
-                            ),
-                            fit: BoxFit.fill)),
+                      borderRadius: BorderRadius.circular(20),
+                      image: DecorationImage(
+                        image: profileURL != null
+                            ? NetworkImage(profileURL!)
+                            : AssetImage('assets/userIcon.jpg') as ImageProvider, // Casting AssetImage to ImageProvider
+                        fit: BoxFit.fill,
+                      ),
+                    ),
                   ),
                   Text(
                     user?.email ?? "Guest",

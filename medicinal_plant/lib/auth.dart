@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'notifications.dart';
+
 class Auth {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
@@ -21,6 +23,9 @@ class Auth {
       idToken: googleAuth?.idToken,
     );
 
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if(userId != Null)
+      await saveDeviceTokenToFirestore(userId!);
     await FirebaseAuth.instance.signInWithCredential(credential);
   }
 
@@ -86,8 +91,13 @@ class Auth {
       );
 
       print('User created successfully: ${userCredential.user?.email}');
-      return userCredential;
+      // Save the device token after the user logs in
 
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if(userId != Null) {
+        await saveDeviceTokenToFirestore(userId!);
+      }
+      return userCredential;
   }
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();

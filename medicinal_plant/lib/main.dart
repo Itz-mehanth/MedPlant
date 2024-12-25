@@ -18,9 +18,11 @@ import 'package:medicinal_plant/search_page.dart';
 import 'package:medicinal_plant/splash_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medicinal_plant/widget_tree.dart';
-
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 Future<void> main() async {
+
+
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
     await Firebase.initializeApp(
@@ -51,6 +53,10 @@ Future<void> main() async {
   runApp(
     ProviderScope(child: MyApp()),
   );
+
+  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+  OneSignal.initialize('b2b54cd9-5f66-4f46-9c2d-8a62257a702d');
+  OneSignal.Notifications.requestPermission(true);
 }
 
 class MyApp extends StatelessWidget {

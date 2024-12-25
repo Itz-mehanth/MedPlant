@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'notifications.dart';
 
 // import 'package:http/http.dart' as http;
 // import 'dart:convert' show json;
@@ -32,6 +33,17 @@ class AuthService with ChangeNotifier {
         // Sign in to Firebase with the Google credential
         UserCredential userCredential =
             await FirebaseAuth.instance.signInWithCredential(credential);
+
+        String? userId = FirebaseAuth.instance.currentUser?.uid;
+        if(userId != Null) {
+          try{
+            await saveDeviceTokenToFirestore(userId!);
+          } catch(e){
+            print("Error saving device token");
+          }
+        }else{
+          print("User is not signed In");
+        }
 
         print('Signed in with email: ${userCredential.user?.email}');
       }
