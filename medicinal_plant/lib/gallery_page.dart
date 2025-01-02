@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get_connect/http/src/response/response.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
@@ -16,13 +15,8 @@ class GalleryPage extends StatefulWidget {
 }
 
 class _GalleryPageState extends State<GalleryPage> {
-  List<String> imageUrls = [
-    'https://tse1.mm.bing.net/th?id=OIP.cfxVoPK-zXAsxKiTmA3qVwHaFj&pid=Api&P=0&h=180',
-    'https://tse4.mm.bing.net/th?id=OIP.rvSWtRd_oPRTwDoTCmkP5gHaE8&pid=Api&P=0&h=180'
-  ];
-
-  List<_SelectedImage> selectedImages = [];
-  List<String> selectedImageUrls = []; // Separate selected URLs for deletion
+  List<List<dynamic>> combinedList = [];
+  List<List<dynamic>> selectedCombinedList = [];
   List<String> plantNames = [];
   final ImagePicker _picker = ImagePicker();
   bool isLoading = true;
@@ -36,7 +30,7 @@ class _GalleryPageState extends State<GalleryPage> {
 
   Future<void> _fetchPlantNames() async {
     final QuerySnapshot plantDocs =
-        await FirebaseFirestore.instance.collection('plant_details').get();
+    await FirebaseFirestore.instance.collection('plant_details').get();
     final List<String> names = plantDocs.docs.map((doc) => doc.id).toList();
 
     setState(() {
@@ -44,7 +38,7 @@ class _GalleryPageState extends State<GalleryPage> {
       isLoading = false;
     });
   }
-  
+
   Future<void> _fetchImages() async {
     final User? user = FirebaseAuth.instance.currentUser;
 
@@ -58,8 +52,12 @@ class _GalleryPageState extends State<GalleryPage> {
 
       if (images != null) {
         setState(() {
-          imageUrls =
-              images.map((image) => image['downloadUrl'] as String).toList();
+          combinedList = images.map((image) {
+            String downloadUrl = image['downloadUrl'] as String;
+            GeoPoint location = image['location'] as GeoPoint;
+            return [downloadUrl, [location.latitude, location.longitude]];
+          }).toList();
+          print(combinedList);
           isLoading = false;
         });
       }
@@ -71,7 +69,7 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Future<void> _showImageUploadPopup() async {
-    Map<String, String?> selectedPlants = {}; // Track selected plant for each URL
+    Map<List<dynamic>, String?> selectedPlants = {}; // Track selected plant for each entry
 
     showDialog(
       context: context,
@@ -82,9 +80,10 @@ class _GalleryPageState extends State<GalleryPage> {
             width: double.maxFinite,
             height: 300,
             child: ListView.builder(
-              itemCount: selectedImageUrls.length,
+              itemCount: selectedCombinedList.length,
               itemBuilder: (context, index) {
-                final imageUrl = selectedImageUrls[index];
+                final entry = selectedCombinedList[index];
+                final imageUrl = entry[0];
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -100,7 +99,7 @@ class _GalleryPageState extends State<GalleryPage> {
                     Expanded(
                       child: DropdownButton<String>(
                         hint: const Text('Select Plant'),
-                        value: selectedPlants[imageUrl],
+                        value: selectedPlants[entry],
                         items: plantNames.map((name) {
                           return DropdownMenuItem(
                             value: name,
@@ -109,8 +108,7 @@ class _GalleryPageState extends State<GalleryPage> {
                         }).toList(),
                         onChanged: (value) {
                           setState(() {
-                            print("Selected Plant: $value"); // Debugging line
-                            selectedPlants[imageUrl] = value;
+                            selectedPlants[entry] = value;
                           });
                         },
                       ),
@@ -119,7 +117,7 @@ class _GalleryPageState extends State<GalleryPage> {
                       icon: const Icon(Icons.upload),
                       color: Colors.blue,
                       onPressed: () {
-                        _uploadImage(imageUrl, selectedPlants[imageUrl]);
+                        _uploadImage(entry, selectedPlants[entry]);
                       },
                     ),
                   ],
@@ -138,8 +136,7 @@ class _GalleryPageState extends State<GalleryPage> {
     );
   }
 
-
-  Future<void> _uploadImage(String imageUrl, String? selectedPlantName) async {
+  Future<void> _uploadImage(List<dynamic> entry, String? selectedPlantName) async {
     if (selectedPlantName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a plant name for all images.')),
@@ -152,7 +149,8 @@ class _GalleryPageState extends State<GalleryPage> {
       final Reference storageRef = FirebaseStorage.instance
           .ref('images/$selectedPlantName/$fileName');
 
-      // Use the image URL directly (for Flutter Web: fetch and upload bytes)
+      final String imageUrl = entry[0];
+      final List<double> loc = entry[1];
       final http.Response response = await http.get(Uri.parse(imageUrl));
       final Uint8List bytes = response.bodyBytes;
 
@@ -169,12 +167,24 @@ class _GalleryPageState extends State<GalleryPage> {
         'uploadedAt': DateTime.now(),
       });
 
+      final GeoPoint geoPoint = GeoPoint(loc[0], loc[1]);
+
+      // Save the GeoPoint to the 'coordinates' collection
+      await FirebaseFirestore.instance
+          .collection('plant_details')
+          .doc(selectedPlantName)
+          .collection('coordinates')
+          .add({
+        'location': geoPoint,
+        'addedAt': DateTime.now(),
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Image uploaded to $selectedPlantName!')),
       );
 
       setState(() {
-        selectedImageUrls.remove(imageUrl); // Remove from the list after uploading
+        selectedCombinedList.remove(entry); // Remove from the list after uploading
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -186,33 +196,32 @@ class _GalleryPageState extends State<GalleryPage> {
   Future<void> _deleteSelectedImages() async {
     final User? user = FirebaseAuth.instance.currentUser;
 
-    if (user != null && selectedImageUrls.isNotEmpty) {
-      for (String imageUrl in selectedImageUrls) {
-        // Delete image from Firebase Storage
+    if (user != null && selectedCombinedList.isNotEmpty) {
+      for (List<dynamic> entry in selectedCombinedList) {
+        final String imageUrl = entry[0];
 
+        // Delete image from Firebase Storage
         final Reference ref = FirebaseStorage.instance.refFromURL(imageUrl);
         await ref.delete();
 
         // Remove the image reference from the user's collection
         await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-          'images': FieldValue.arrayRemove([{'downloadUrl': imageUrl}]),
+          'images': FieldValue.arrayRemove([
+            {'downloadUrl': imageUrl, 'location': entry[1]},
+          ]),
         });
-
       }
 
-      // Update UI to reflect changes
       setState(() {
-        imageUrls.removeWhere((url) => selectedImageUrls.contains(url));
-        selectedImageUrls.clear();
+        combinedList.removeWhere((entry) => selectedCombinedList.contains(entry));
+        selectedCombinedList.clear();
       });
 
-      // Show confirmation to the user
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selected images and associated plants deleted successfully.')),
       );
     }
   }
-
 
   void _openImage(String imageUrl) {
     Navigator.push(
@@ -228,7 +237,7 @@ class _GalleryPageState extends State<GalleryPage> {
       appBar: AppBar(
         title: const Text('Gallery'),
         actions: [
-          if (selectedImageUrls.isNotEmpty)
+          if (selectedCombinedList.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: _deleteSelectedImages,
@@ -242,30 +251,32 @@ class _GalleryPageState extends State<GalleryPage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : GridView.builder(
-              padding: const EdgeInsets.all(8),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
-              itemCount: imageUrls.length,
-              itemBuilder: (context, index) {
-                final imageUrl = imageUrls[index];
-                final isSelected = selectedImageUrls.contains(imageUrl);
+        padding: const EdgeInsets.all(8),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+        ),
+        itemCount: combinedList.length,
+        itemBuilder: (context, index) {
+          final entry = combinedList[index];
+          final imageUrl = entry[0];
+          final isSelected = selectedCombinedList.contains(entry);
 
-                return GestureDetector(
-                  onDoubleTap: () {
-                    setState(() {
-                      isSelected
-                          ? selectedImageUrls.remove(imageUrl)
-                          : selectedImageUrls.add(imageUrl);
-                    });
-                  },
-                  onTap: () => _openImage(imageUrl),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.network(imageUrl, fit: BoxFit.cover),
+          return GestureDetector(
+            onDoubleTap: () {
+              setState(() {
+                isSelected
+                    ? selectedCombinedList.remove(entry)
+                    : selectedCombinedList.add(entry);
+              });
+            },
+            onTap: () => _openImage(imageUrl),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image
+                      .network(imageUrl, fit: BoxFit.cover),
                       ),
                       if (isSelected)
                         Positioned(

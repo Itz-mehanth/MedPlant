@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
+String ngrokUrl = 'no available';
 
 class ChatBotPage extends StatefulWidget {
   @override
@@ -14,7 +15,6 @@ class _ChatBotPageState extends State<ChatBotPage> {
   final TextEditingController _queryController = TextEditingController();
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
-  String _ngrokUrl = 'no available';
 
 
   @override
@@ -36,12 +36,12 @@ class _ChatBotPageState extends State<ChatBotPage> {
       print(ngrokUrl + " is the server");
 
       setState(() {
-        _ngrokUrl = ngrokUrl;
+        ngrokUrl = ngrokUrl;
       });
     } catch (e) {
       print("Error fetching remote config: $e");
       setState(() {
-        _ngrokUrl = "Error fetching URL";
+        ngrokUrl = "Error fetching URL";
       });
     }
   }
@@ -50,7 +50,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
   Future<String> queryBackendModel(String query) async {
     try {
       final response = await http.post(
-        Uri.parse('$_ngrokUrl/get_plant_info'), // Update with your backend URL
+        Uri.parse('$ngrokUrl/get_plant_info'), // Update with your backend URL
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'query': query}),
       );

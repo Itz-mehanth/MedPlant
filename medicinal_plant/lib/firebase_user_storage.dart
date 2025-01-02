@@ -9,22 +9,31 @@ Future<void> storeUserDetails(String name, String email, String password) async 
   final User? user = FirebaseAuth.instance.currentUser;
 
   if (user != null) {
-    // Create a new document in Firestore with the user ID
+    // Reference to the user document in Firestore
     final userDocRef = _firestore.collection('users').doc(user.uid);
 
     // Prepare user data
     final userData = {
       'name': name,
       'email': email,
-      'password':password,
-      'language': 'en'
+      'password': password, // Remove password field if not needed
+      'language': 'en',
       // Add other relevant user details here
     };
 
-    // Update the user document with the data
-    await userDocRef.set(userData);
-
-    print('User details stored successfully!');
+    try {
+      // Attempt to update the user document
+      await userDocRef.update(userData);
+      print('User details updated successfully!');
+    } catch (e) {
+      // If the document does not exist, create it with set()
+      if (e.toString().contains("NOT_FOUND")) {
+        await userDocRef.set(userData);
+        print('Document did not exist. User details set successfully!');
+      } else {
+        print('Error updating user details: $e');
+      }
+    }
   } else {
     print('No user logged in!');
   }

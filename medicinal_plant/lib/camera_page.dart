@@ -12,6 +12,8 @@ import 'package:medicinal_plant/widget_tree.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
+
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -49,6 +51,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   final ImagePicker picker = ImagePicker();
   File? image;
   bool imageSelected = false;
+  String predictionImageUrl = "";
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -107,6 +110,53 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     return null;
   }
 
+  Future<Position?> getUserLocation() async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print('Location services are disabled.');
+        return null;
+      }
+
+      // Check and request location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('Location permission denied.');
+          return null;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('Location permission is permanently denied.');
+        return null;
+      }
+
+      // Get the current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      return position;
+    } catch (e) {
+      print('Error while fetching location: $e');
+      return null;
+    }
+  }
+
+  Future<Position?> fetchLocation() async {
+    Position? position = await getUserLocation();
+    if (position != null) {
+      print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
+      return position;
+    } else {
+      print('Unable to fetch location.');
+      return null;
+    }
+  }
+
+
   Future<void> _pickImageFromGallery() async {
     final XFile? galleryPickedFile =
         await picker.pickImage(source: ImageSource.gallery);
@@ -161,16 +211,34 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           final DocumentReference userDocRef =
               FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-          // Add the download URL to the user's document (e.g., under an "images" array field)
-          await userDocRef.update({
-            'images': FieldValue.arrayUnion([
-              {
-                'downloadUrl': downloadUrl,
-                'uploadedAt': DateTime.now(),
-              }
-            ]),
-          });
+          Position? position = await fetchLocation();
 
+
+          if (position != null){
+            // Add the download URL to the user's document (e.g., under an "images" array field)
+            await userDocRef.update({
+              'images': FieldValue.arrayUnion([
+                {
+                  'downloadUrl': downloadUrl,
+                  'uploadedAt': DateTime.now(),
+                  'location': GeoPoint(position!.latitude, position!.longitude), // Add GeoPoint here
+                }
+              ]),
+            });// Add the download URL to the user's document (e.g., under an "images" array field)
+          }else{
+            await userDocRef.update({
+              'images': FieldValue.arrayUnion([
+                {
+                  'downloadUrl': downloadUrl,
+                  'uploadedAt': DateTime.now(),
+                }
+              ]),
+            });
+          }
+
+          setState(() {
+            predictionImageUrl = downloadUrl;
+          });
           print('Download URL saved to user document in Firestore');
         } else {
           print('No user logged in!');
@@ -280,7 +348,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                             ),
                             onPressed: () {
                               if (image != null) {
-                                Navigator.pushNamed(context, '/leaf-prediction');
+                                Navigator.pushNamed(context, '/leaf-prediction',
+                                  arguments: predictionImageUrl,  // Pass the argument here
+                                );
                               } else {
                                 print("image not found");
                               }

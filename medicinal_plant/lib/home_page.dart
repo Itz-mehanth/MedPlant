@@ -300,7 +300,7 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(
-                  height: 142,
+                  height: 145,
                   width: 134,
                   child: Center(child: CircularProgressIndicator()),
                 );
@@ -436,7 +436,7 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
                     bottom: BorderSide(color: Colors.black12),
                   ),
                 ),
-                height: 147,
+                height: 149,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -472,7 +472,7 @@ class _PlantBoxWidgetState extends State<PlantBoxWidget>
                       decoration: const BoxDecoration(
                         border: Border(top: BorderSide(color: Colors.black12)),
                       ),
-                      height: 45,
+                      height: 44,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

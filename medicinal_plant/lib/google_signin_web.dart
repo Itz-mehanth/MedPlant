@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'firebase_user_storage.dart';
 import 'notifications.dart';
 
 // import 'package:http/http.dart' as http;
@@ -18,41 +19,58 @@ class AuthService with ChangeNotifier {
 
   Future<void> signInWithGoogle() async {
     try {
-      final googleUser = await _googleSignIn.signInSilently(
-          reAuthenticate : true
-      );
-      if (googleUser != null) {
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
+      // Attempt silent sign-in
+      final googleUser = await _googleSignIn.signInSilently();
 
-        final OAuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        // Sign in to Firebase with the Google credential
-        UserCredential userCredential =
-            await FirebaseAuth.instance.signInWithCredential(credential);
-
-        String? userId = FirebaseAuth.instance.currentUser?.uid;
-        if(userId != Null) {
-          try{
-            await saveDeviceTokenToFirestore(userId!);
-          } catch(e){
-            print("Error saving device token");
-          }
-        }else{
-          print("User is not signed In");
-        }
-
-        print('Signed in with email: ${userCredential.user?.email}');
+      // If silent sign-in fails, prompt the user for explicit sign-in
+      final GoogleSignInAccount? user = googleUser ?? await _googleSignIn.signIn();
+      if (user == null) {
+        print("User canceled the sign-in process.");
+        return; // Exit if the user cancels the sign-in
       }
+
+      // Proceed with authentication
+      final GoogleSignInAuthentication googleAuth = await user.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign in to Firebase
+      UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      print('Signed in with email: ${userCredential.user?.email}');
+
+      // Store user details
+      try {
+        await storeUserDetails(" ", userCredential.user!.email!, " ");
+      } catch (e) {
+        print("Error storing user details: $e");
+      }
+
+      // Get current user ID
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        // Save device token
+        try {
+          await saveDeviceTokenToFirestore(userId);
+        } catch (e) {
+          print("Error saving device token: $e");
+        }
+      } else {
+        print("User is not signed in.");
+      }
+
       notifyListeners(); // Notify listeners about the sign-in status
     } catch (e) {
       print('Error signing in with Google: $e');
     }
-    print("signin process completed");
+
+    print("Sign-in process completed.");
   }
+
 
   Future<void> signOut() async {
     try {

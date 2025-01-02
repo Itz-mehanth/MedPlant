@@ -72,9 +72,9 @@ dependencies:
   flutter_dotenv: ^5.0.0
   firebase_database: ^11.1.6
   firebase_remote_config: ^5.1.5
-  file_picker: ^5.0.1
   onesignal_flutter: ^5.2.9
-
+  js: ^0.6.5
+  geolocator: ^10.0.0 # Check for the latest version
 
   flutter_gen: any
   go_router: ^14.6.2

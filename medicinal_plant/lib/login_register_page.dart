@@ -434,8 +434,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
         onPressed: () async {
           print("signing in with google");
           await authService.signInWithGoogle();
-          print(
-              "Checking signin completion"); // Await the loginWithGoogle() method
+
+          print("Checking signin completion"); // Await the loginWithGoogle() method
           if (FirebaseAuth.instance.currentUser != null) {
             print("Redirecting to home page");
             Navigator.push(
@@ -519,21 +519,21 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           fit: BoxFit.cover)),
                 ),
               ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const WidgetTree()),
-                    );
-                  },
-                  iconSize: 20,
-                  icon: const Icon(Icons.arrow_back),
-                ),
-              ),
+              // Positioned(
+              //   top: 10,
+              //   left: 10,
+              //   child: IconButton(
+              //     onPressed: () {
+              //       Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //             builder: (context) => const WidgetTree()),
+              //       );
+              //     },
+              //     iconSize: 20,
+              //     icon: const Icon(Icons.arrow_back),
+              //   ),
+              // ),
               Positioned(
                 top: MediaQuery.of(context).size.height / 3,
                 left: 0,

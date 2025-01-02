@@ -254,9 +254,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     auth.signOut();
                   } else if (authService.isLoggedIn) {
                     authService.signOut();
-                  } else {
-                    Navigator.pushNamed(context, '/login');
                   }
+                  Navigator.pushNamed(context, '/login');
                 },
                 style: ButtonStyle(
                   backgroundColor: WidgetStateProperty.resolveWith<Color>(

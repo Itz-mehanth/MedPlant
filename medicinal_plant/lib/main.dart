@@ -20,6 +20,8 @@ import 'package:go_router/go_router.dart';
 import 'package:medicinal_plant/widget_tree.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
+
+
 Future<void> main() async {
 
 
@@ -49,7 +51,8 @@ Future<void> main() async {
       ),
     );
   }
-  
+
+
   runApp(
     ProviderScope(child: MyApp()),
   );
@@ -78,7 +81,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfilePage(),
         '/groups': (context) => GroupsPage(),
         '/search': (context) => const SearchPage(),
-        '/leaf-prediction': (context) => const LeafPredictionApp(),
+        '/leaf-prediction': (context) => LeafPredictionApp(),
       },
 
       theme: ThemeData(
