@@ -43,6 +43,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
       // Assuming the user data contains a 'device_token' field for each user
       List<String> tokens = [];
       for (var userId in users) {
+        if(userId == currentUserId){
+          continue;
+        }
         final userSnapshot = await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)

@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:5000", "http://localhost:57046", "https://medicinal-plant-82aa9.web.app"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type"]
+  }
+]

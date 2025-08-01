@@ -4,7 +4,10 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
-String ngrokUrl = 'no available';
+// String ngrokUrl = 'https://0919-34-106-171-95.ngrok-free.app';
+String ngrokUrl = 'https://medplant-backend.onrender.com';
+// String ngrokUrl = 'https://medplant-backend.onrender.com';
+String gemini_API_KEY = "AIzaSyBD_MRK8I-s7v37z7cjgeSfhA-steuW34A";
 
 class ChatBotPage extends StatefulWidget {
   @override
@@ -16,11 +19,10 @@ class _ChatBotPageState extends State<ChatBotPage> {
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
 
-
   @override
   void initState() {
     super.initState();
-    _fetchNgrokUrl();
+    // _fetchNgrokUrl();
   }
 
   Future<void> _fetchNgrokUrl() async {

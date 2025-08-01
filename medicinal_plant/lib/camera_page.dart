@@ -9,11 +9,7 @@ import 'package:path/path.dart' as path;
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:medicinal_plant/widget_tree.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
-
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -156,95 +152,37 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
   }
 
-
   Future<void> _pickImageFromGallery() async {
     final XFile? galleryPickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
+    await picker.pickImage(source: ImageSource.gallery);
     if (galleryPickedFile != null) {
       print("image picked successfully");
-      // File? croppedImage = await _imageCropper(File(galleryPickedFile.path));
       File galleryPickedFileAsFile = File(galleryPickedFile.path);
       setState(() {
         image = galleryPickedFileAsFile;
         imageSelected = true;
       });
-      print(
-          'Gallery image selected:${image != null} ${galleryPickedFile.path}');
+      print('Gallery image selected: ${image != null} ${galleryPickedFile.path}');
     } else {
-      print('No image selected from gallery');
+      print('Image not found');
     }
   }
 
   Future<void> _pickImageFromCamera() async {
     if (cameraController != null && cameraController!.value.isInitialized) {
       try {
-        // Take a picture
         final XFile cameraPickedFile = await cameraController!.takePicture();
         print("Image picked successfully");
 
-        // Convert to File
         File cameraPickedFileAsFile = File(cameraPickedFile.path);
 
         setState(() {
           image = cameraPickedFileAsFile;
           imageSelected = true;
         });
-        print(
-            'Camera image selected: ${image != null} ${cameraPickedFile.path}');
-
-        // Upload image to Firebase Storage
-        String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-        final Reference firebaseStorageRef =
-            FirebaseStorage.instance.ref().child('uploads/$fileName');
-        final UploadTask uploadTask =
-            firebaseStorageRef.putFile(cameraPickedFileAsFile);
-
-        final TaskSnapshot taskSnapshot = await uploadTask;
-        final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-
-        print('Image uploaded to Firebase Storage: $downloadUrl');
-
-        // Save download URL inside the user's document in Firestore
-        final User? user = FirebaseAuth.instance.currentUser;
-
-        if (user != null) {
-          final DocumentReference userDocRef =
-              FirebaseFirestore.instance.collection('users').doc(user.uid);
-
-          Position? position = await fetchLocation();
-
-
-          if (position != null){
-            // Add the download URL to the user's document (e.g., under an "images" array field)
-            await userDocRef.update({
-              'images': FieldValue.arrayUnion([
-                {
-                  'downloadUrl': downloadUrl,
-                  'uploadedAt': DateTime.now(),
-                  'location': GeoPoint(position!.latitude, position!.longitude), // Add GeoPoint here
-                }
-              ]),
-            });// Add the download URL to the user's document (e.g., under an "images" array field)
-          }else{
-            await userDocRef.update({
-              'images': FieldValue.arrayUnion([
-                {
-                  'downloadUrl': downloadUrl,
-                  'uploadedAt': DateTime.now(),
-                }
-              ]),
-            });
-          }
-
-          setState(() {
-            predictionImageUrl = downloadUrl;
-          });
-          print('Download URL saved to user document in Firestore');
-        } else {
-          print('No user logged in!');
-        }
+        print('Camera image selected: ${image != null} ${image?.path}');
       } catch (e) {
-        print('Error picking image and uploading: $e');
+        print('Error picking image: $e');
       }
     } else {
       print('Camera is not initialized');
@@ -348,8 +286,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                             ),
                             onPressed: () {
                               if (image != null) {
-                                Navigator.pushNamed(context, '/leaf-prediction',
-                                  arguments: predictionImageUrl,  // Pass the argument here
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LeafPredictionApp(imageFile: image!), // Pass File directly
+                                  ),
                                 );
                               } else {
                                 print("image not found");

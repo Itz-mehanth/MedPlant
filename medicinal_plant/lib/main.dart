@@ -52,7 +52,6 @@ Future<void> main() async {
     );
   }
 
-
   runApp(
     ProviderScope(child: MyApp()),
   );
@@ -81,7 +80,6 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfilePage(),
         '/groups': (context) => GroupsPage(),
         '/search': (context) => const SearchPage(),
-        '/leaf-prediction': (context) => LeafPredictionApp(),
       },
 
       theme: ThemeData(

@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "medicinal-plant-82aa9"
-  }
+    "default": "medicinal-plant-82aa9",
+    "medicinal": "medicinal-plant-82aa9"
+  },
+  "targets": {},
+  "etags": {}
 }
