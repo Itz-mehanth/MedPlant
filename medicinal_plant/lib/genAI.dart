@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// String ngrokUrl = 'https://0919-34-106-171-95.ngrok-free.app';
-String ngrokUrl = 'https://medplant-backend.onrender.com';
-// String ngrokUrl = 'https://medplant-backend.onrender.com';
-String gemini_API_KEY = "AIzaSyBD_MRK8I-s7v37z7cjgeSfhA-steuW34A";
+final String gemini_API_KEY = dotenv.env['GEMINI_API_KEY'] ?? 'NO_API_KEY';
 
 class ChatBotPage extends StatefulWidget {
+  const ChatBotPage({super.key});
+
   @override
   _ChatBotPageState createState() => _ChatBotPageState();
 }
@@ -19,51 +18,70 @@ class _ChatBotPageState extends State<ChatBotPage> {
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // _fetchNgrokUrl();
-  }
-
-  Future<void> _fetchNgrokUrl() async {
+  /// Fetches all plant details from Firestore to build context for the AI.
+  Future<String> _fetchPlantContext() async {
     try {
-      // Access FirebaseRemoteConfig instance
-      final FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.instance;
+      final QuerySnapshot plantDocs =
+      await FirebaseFirestore.instance.collection('plant_details').get();
 
-      // Activate the fetched config
-      await remoteConfig.fetchAndActivate();
+      if (plantDocs.docs.isEmpty) {
+        return "No plant information is available in the database.";
+      }
 
-      // Retrieve the ngrok URL from the remote config
-      String ngrokUrl = remoteConfig.getString('ngrok_url');
-      print(ngrokUrl + " is the server");
-
-      setState(() {
-        ngrokUrl = ngrokUrl;
-      });
+      // Format the documents into a string context.
+      final contextBuffer = StringBuffer();
+      for (var doc in plantDocs.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final commonName = data['Common Name'] ?? 'N/A';
+        final scientificName = data['Scientific Name'] ?? 'N/A';
+        final description = data['Description'] ?? 'No description available.';
+        contextBuffer.writeln(
+            "Plant: $commonName (Scientific Name: $scientificName). Description: $description");
+      }
+      return contextBuffer.toString();
     } catch (e) {
-      print("Error fetching remote config: $e");
-      setState(() {
-        ngrokUrl = "Error fetching URL";
-      });
+      print("Error fetching plant context from Firestore: $e");
+      return "Error fetching plant data.";
     }
   }
 
-  /// Function to send a query to the backend
-  Future<String> queryBackendModel(String query) async {
+  /// Sends a query directly to the Gemini API with context from Firestore.
+  Future<String> queryGeminiModel(String query) async {
+    final plantContext = await _fetchPlantContext();
+
+    final String prompt =
+        "You are a helpful expert on medicinal plants. "
+        "Based on the following information from the database, answer the user's query. "
+        "If the query is not related to plants, politely decline to answer.\n\n"
+        "Database Context:\n$plantContext\n\n"
+        "User Query: $query";
+
     try {
       final response = await http.post(
-        Uri.parse('$ngrokUrl/get_plant_info'), // Update with your backend URL
+        Uri.parse(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=$gemini_API_KEY'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'query': query}),
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {'text': prompt}
+              ]
+            }
+          ]
+        }),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        return responseData['answer'];
+        // Safely access the generated text.
+        return responseData['candidates'][0]['content']['parts'][0]['text'];
       } else {
+        print("Error from Gemini API: ${response.body}");
         return "Error: Unable to fetch response. Code: ${response.statusCode}";
       }
     } catch (e) {
+      print("Error sending request to Gemini: $e");
       return "Error: $e";
     }
   }
@@ -80,7 +98,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
       _isTyping = true;
     });
 
-    final aiResponse = await queryBackendModel(userMessage);
+    final aiResponse = await queryGeminiModel(userMessage);
 
     setState(() {
       _messages.add({'text': aiResponse, 'isUser': false});
@@ -107,10 +125,11 @@ class _ChatBotPageState extends State<ChatBotPage> {
         ),
         child: Column(
           crossAxisAlignment:
-              isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             if (!isUser)
               const Row(
+                mainAxisSize: MainAxisSize.min, // Important for layout
                 children: [
                   CircleAvatar(
                     backgroundImage: AssetImage('assets/icons/google.png'),
@@ -119,17 +138,18 @@ class _ChatBotPageState extends State<ChatBotPage> {
                   SizedBox(width: 8),
                   Text(
                     'AI',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
                   ),
                 ],
               ),
             if (isUser)
               const Row(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
                     'You',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   SizedBox(width: 8),
                   CircleAvatar(
@@ -160,14 +180,16 @@ class _ChatBotPageState extends State<ChatBotPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI Chatbot'),
+        backgroundColor: const Color.fromARGB(255, 68, 255, 0),
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
+              reverse: true, // Show latest messages at the bottom
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                return _buildChatBubble(_messages[index]);
+                return _buildChatBubble(_messages.reversed.toList()[index]);
               },
             ),
           ),
@@ -215,7 +237,7 @@ class AnimatedText extends StatefulWidget {
   final String text;
   final TextStyle style;
 
-  AnimatedText({required this.text, required this.style});
+  const AnimatedText({super.key, required this.text, required this.style});
 
   @override
   _AnimatedTextState createState() => _AnimatedTextState();
@@ -237,6 +259,19 @@ class _AnimatedTextState extends State<AnimatedText>
       CurvedAnimation(parent: _controller, curve: Curves.linear),
     );
     _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.text != oldWidget.text) {
+      _controller.duration = Duration(milliseconds: widget.text.length * 20);
+      _charCount = IntTween(begin: 0, end: widget.text.length).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.linear),
+      );
+      _controller.reset();
+      _controller.forward();
+    }
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get_navigation/get_navigation.dart';
@@ -26,21 +27,24 @@ Future<void> main() async {
 
 
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
+
   if (kIsWeb) {
     await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyCrbOmzRVSMGhKGvjdI12fVUnSDfUGfWPY",
-        projectId: "medicinal-plant-82aa9",
-        messagingSenderId: "1085343678758",
-        appId: "1:1085343678758:android:9a2029c33b8ed1017401e7",
-        storageBucket: 'medicinal-plant-82aa9.appspot.com',
-        databaseURL: "https://medicinal-plant-82aa9.firebaseio.com", // Add Database URL Here
-      )
-    ); // Android uses google-services.json
+        options: FirebaseOptions(
+          apiKey: dotenv.env['FIREBASE_API_KEY_WEB']!,
+          projectId: "medicinal-plant-82aa9",
+          messagingSenderId: "1085343678758",
+          appId: "1:1085343678758:android:9a2029c33b8ed1017401e7",
+          storageBucket: 'medicinal-plant-82aa9.appspot.com',
+          databaseURL: "https://medicinal-plant-82aa9.firebaseio.com",
+        )
+    );
   } else{
     await Firebase.initializeApp(
-      options: const FirebaseOptions(
-          apiKey: "AIzaSyAr3a6eqdxaCsxbC5x2vsnM6t1tqlSg_vI",
+      options: FirebaseOptions(
+          apiKey: dotenv.env['FIREBASE_API_KEY_ANDROID']!,
           authDomain: "medicinal-plant-82aa9.firebaseapp.com",
           databaseURL: "https://medicinal-plant-82aa9-default-rtdb.asia-southeast1.firebasedatabase.app",
           projectId: "medicinal-plant-82aa9",

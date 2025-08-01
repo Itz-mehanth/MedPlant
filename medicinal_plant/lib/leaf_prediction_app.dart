@@ -2,12 +2,15 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:medicinal_plant/genAI.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+
+final String backendURL = dotenv.env['BACKEND_URL'] ?? 'http://127.0.0.1:5000';
+final String gemini_API_KEY = dotenv.env['GEMINI_API_KEY'] ?? 'NO_API_KEY';
 
 class LeafPredictionApp extends StatefulWidget {
   // Support multiple input types
@@ -126,7 +129,7 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
 
       if (widget.imageUrl != null) {
         response = await http.post(
-          Uri.parse('$ngrokUrl/predict'),
+          Uri.parse('$backendURL/predict'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'image_url': widget.imageUrl,
@@ -134,7 +137,7 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
           }),
         );
       } else {
-        var request = http.MultipartRequest('POST', Uri.parse('$ngrokUrl/predict'));
+        var request = http.MultipartRequest('POST', Uri.parse('$backendURL/predict'));
         request.fields['type'] = _selectedModel;
         Uint8List? fileBytes;
         if (widget.imageFile != null) {
