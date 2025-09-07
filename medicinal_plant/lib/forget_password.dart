@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:medicinal_plant/login_register_page.dart';
 import 'package:medicinal_plant/utils/global_functions.dart';
+import 'home_page.dart';
 
 class Forget extends StatefulWidget {
   const Forget({super.key});
@@ -58,13 +59,12 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
       bool obscureControl,
       Function(bool)? toggleObscureText) {
     return SizedBox(
-        height: 40,
-        width: 250,
+        height: 90,
+        width: 350,
         child: TextField(
           obscureText: isPass,
           controller: controller,
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 2.0),
             labelText: "Email",
             labelStyle: const TextStyle(fontSize: 14),
             hintText: "Enter you email",
@@ -77,10 +77,10 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
               borderRadius: BorderRadius.all(Radius.circular(12)),
             ),
             floatingLabelStyle:
-                const TextStyle(color: Colors.greenAccent, fontSize: 12),
+                const TextStyle(color: AppColors.primary, fontSize: 12),
             focusedBorder: const OutlineInputBorder(
               borderSide: BorderSide(
-                color: Colors.greenAccent,
+                color: AppColors.primary,
                 width: 2.0,
               ),
               borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -221,9 +221,8 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                       false,
                                       toggleObscureText,
                                     ),
-                                    const SizedBox(height: 30),
                                     Padding(
-                                      padding: const EdgeInsets.all(8.0),
+                                      padding: const EdgeInsets.all(2.0),
                                       child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
@@ -240,8 +239,7 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                                             50),
                                                   ),
                                                   backgroundColor:
-                                                      const Color.fromARGB(
-                                                          255, 222, 136, 93),
+                                                      const Color.fromARGB(255, 0, 0, 0),
                                                   foregroundColor: Colors.white,
                                                   padding: EdgeInsets.zero,
                                                 ),
@@ -258,7 +256,7 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                             ),
                                           ),
                                           const SizedBox(
-                                            width: 30,
+                                            width: 10,
                                           ),
                                           if (isLoading)
                                             const SizedBox(
@@ -271,8 +269,8 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                             )
                                           else
                                             SizedBox(
-                                              height: 35,
-                                              width: 120,
+                                              height: 50,
+                                              width: 280,
                                               child: ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
                                                   shape: RoundedRectangleBorder(
@@ -281,8 +279,7 @@ class _ForgetState extends State<Forget> with SingleTickerProviderStateMixin {
                                                             25),
                                                   ),
                                                   backgroundColor:
-                                                      const Color.fromARGB(
-                                                          255, 0, 255, 42),
+                                                      AppColors.primary,
                                                   foregroundColor: Colors.white,
                                                 ),
                                                 onPressed: resetPassword,

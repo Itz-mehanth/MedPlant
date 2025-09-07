@@ -329,14 +329,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
       bool obscureControl,
       Function(bool)? toggleObscureText) {
     return SizedBox(
-        height: 40,
-        width: 250,
+        height: 90,
+        width: 350,
         child: TextField(
           obscureText: isPass,
           controller: controller,
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 2.0),
-            labelText: titleFuture,
+          decoration: InputDecoration(            labelText: titleFuture,
             labelStyle: const TextStyle(fontSize: 14),
             hintText: hintFuture,
             hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
@@ -347,11 +345,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
               ),
               borderRadius: BorderRadius.all(Radius.circular(12)),
             ),
-            floatingLabelStyle:
-                const TextStyle(color: Colors.greenAccent, fontSize: 12),
             focusedBorder: const OutlineInputBorder(
               borderSide: BorderSide(
-                color: Colors.greenAccent,
+                color: AppColors.primary,
                 width: 2.0,
               ),
               borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -426,8 +422,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
   // }
   Widget _googleAuthButton(AuthService authService) {
     return SizedBox(
-      height: 40,
-      width: 250,
+      height: 50,
+      width: 350,
       child: SignInButton(
         Buttons.google,
         text: 'Sign up with Google',
@@ -454,8 +450,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   Widget _submitButton() {
     return SizedBox(
-      height: 35,
-      width: 250,
+      height: 50,
+      width: 350,
       child: ElevatedButton(
           onPressed: isLogin
               ? signInWithEmailAndPassword
@@ -464,7 +460,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(25),
             ),
-            backgroundColor: const Color.fromARGB(255, 0, 255, 42),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
           ),
           child: isLoading
@@ -474,11 +470,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
               : isLogin
                   ? const Text(
                       'LOGIN',
-                      style: TextStyle(fontSize: 14),
+                      style: TextStyle(fontSize: 16),
                     )
                   : const Text(
                       'REGISTER',
-                      style: TextStyle(fontSize: 14),
+                      style: TextStyle(fontSize: 16),
                     )),
     );
   }
@@ -497,7 +493,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     final AuthService authService = AuthService();
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 68, 255, 0),
+        backgroundColor: AppColors.primary,
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -519,23 +515,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           fit: BoxFit.cover)),
                 ),
               ),
-              // Positioned(
-              //   top: 10,
-              //   left: 10,
-              //   child: IconButton(
-              //     onPressed: () {
-              //       Navigator.push(
-              //         context,
-              //         MaterialPageRoute(
-              //             builder: (context) => const WidgetTree()),
-              //       );
-              //     },
-              //     iconSize: 20,
-              //     icon: const Icon(Icons.arrow_back),
-              //   ),
-              // ),
               Positioned(
-                top: MediaQuery.of(context).size.height / 3,
+                top: MediaQuery.of(context).size.height / 3.5,
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -589,7 +570,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   ),
                                 ),
                                 padding: const EdgeInsets.only(
-                                    top: 50, bottom: 8, left: 20, right: 20),
+                                    top: 10, bottom: 8, left: 20, right: 20),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -598,7 +579,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       isLogin ? 'Login Page' : 'Register Page',
                                       style: const TextStyle(
                                         color: Colors.black,
-                                        fontSize: 20,
+                                        fontSize: 24,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -618,7 +599,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                               false,
                                               false,
                                               toggleObscureText),
-                                          const SizedBox(height: 16),
                                           entryField(
                                               'Email',
                                               'Enter your email',
@@ -627,7 +607,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                               false,
                                               false,
                                               toggleObscureText),
-                                          const SizedBox(height: 16),
                                           entryField(
                                               'Password',
                                               'Enter your password',
@@ -682,7 +661,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         _submitButton(),
 
                                         const SizedBox(
-                                          height: 33,
+                                          height: 5,
                                         ),
 
                                         SizedBox(

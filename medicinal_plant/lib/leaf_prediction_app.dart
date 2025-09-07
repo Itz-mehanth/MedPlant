@@ -9,8 +9,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-final String backendURL = dotenv.env['BACKEND_URL'] ?? 'http://127.0.0.1:5000';
-final String gemini_API_KEY = dotenv.env['GEMINI_API_KEY'] ?? 'NO_API_KEY';
+final String backendURL = 'http://10.57.130.116:5000';
+final String gemini_API_KEY = 'AIzaSyBD_MRK8I-s7v37z7cjgeSfhA-steuW34A';
 
 class LeafPredictionApp extends StatefulWidget {
   // Support multiple input types
@@ -23,10 +23,8 @@ class LeafPredictionApp extends StatefulWidget {
     this.imageUrl,
     this.imageFile,
     this.imageBytes,
-  }) : assert(
-  (imageUrl != null) ^ (imageFile != null) ^ (imageBytes != null),
-  'Exactly one of imageUrl, imageFile, or imageBytes must be provided'
-  );
+  }) : assert((imageUrl != null) ^ (imageFile != null) ^ (imageBytes != null),
+            'Exactly one of imageUrl, imageFile, or imageBytes must be provided');
 
   @override
   _LeafPredictionAppState createState() => _LeafPredictionAppState();
@@ -39,7 +37,12 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
   List<String> plantNames = [];
   String? selectedPlant; // To store the selected plant name
   bool _isFetchingPlants = true;
-  final List<String> _models = ['leaf', 'fruit']; // Models for dropdown
+  final List<String> _models = [
+    'leaf',
+    'fruit',
+    'flower',
+    'plant'
+  ]; // Models for dropdown
 
   // State variable to hold the image data for display
   Uint8List? _imageBytesForDisplay;
@@ -89,7 +92,7 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
   Future<void> _fetchPlantNames() async {
     try {
       final QuerySnapshot plantDocs =
-      await FirebaseFirestore.instance.collection('plant_details').get();
+          await FirebaseFirestore.instance.collection('plant_details').get();
       final List<String> names = plantDocs.docs.map((doc) => doc.id).toList();
 
       setState(() {
@@ -137,12 +140,14 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
           }),
         );
       } else {
-        var request = http.MultipartRequest('POST', Uri.parse('$backendURL/predict'));
+        var request =
+            http.MultipartRequest('POST', Uri.parse('$backendURL/predict'));
         request.fields['type'] = _selectedModel;
         Uint8List? fileBytes;
         if (widget.imageFile != null) {
           if (kIsWeb) {
-            var fetchedResponse = await http.get(Uri.parse(widget.imageFile!.path));
+            var fetchedResponse =
+                await http.get(Uri.parse(widget.imageFile!.path));
             fileBytes = fetchedResponse.bodyBytes;
           } else {
             fileBytes = await widget.imageFile!.readAsBytes();
@@ -176,7 +181,9 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
       } else {
         print('Error: ${response.statusCode}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to get prediction: ${response.statusCode}')),
+          SnackBar(
+              content:
+                  Text('Failed to get prediction: ${response.statusCode}')),
         );
       }
     } catch (e) {
@@ -206,7 +213,9 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
           feedbackData['imageUrl'] = widget.imageUrl;
         }
 
-        await FirebaseFirestore.instance.collection('user_feedback').add(feedbackData);
+        await FirebaseFirestore.instance
+            .collection('user_feedback')
+            .add(feedbackData);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Feedback submitted successfully!')),
@@ -246,7 +255,7 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Plant Prediction App'),
-        backgroundColor: const Color.fromARGB(255, 68, 255, 0),
+        backgroundColor: const Color.fromARGB(255, 0, 255, 80),
       ),
       body: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -264,7 +273,8 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
                   children: [
                     const Text(
                       'Select Model:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                     ),
                     DropdownButton<String>(
                       value: _selectedModel,
@@ -276,7 +286,8 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
                       items: _models.map((String model) {
                         return DropdownMenuItem<String>(
                           value: model,
-                          child: Text(model[0].toUpperCase() + model.substring(1)),
+                          child:
+                              Text(model[0].toUpperCase() + model.substring(1)),
                         );
                       }).toList(),
                     ),
@@ -286,22 +297,23 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _predict,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    backgroundColor: const Color.fromARGB(255, 68, 255, 0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 15),
+                    backgroundColor: const Color.fromARGB(255, 0, 255, 80),
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
                       : const Text(
-                    'Predict',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                          'Predict',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
                 ),
                 const SizedBox(height: 20),
                 if (_results != null) ...[
@@ -335,7 +347,8 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
                       children: [
                         const Text(
                           'Contribute by sharing the plant species to use:',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
                         DropdownButton<String>(
@@ -356,7 +369,8 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () => _saveFeedback(_results?['predicted_class']),
+                          onPressed: () =>
+                              _saveFeedback(_results?['predicted_class']),
                           child: const Text('Submit'),
                         ),
                       ],
@@ -368,7 +382,8 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PredictionResultsPage(_results!),
+                          builder: (context) =>
+                              PredictionResultsPage(_results!),
                         ),
                       );
                     },
@@ -376,8 +391,7 @@ class _LeafPredictionAppState extends State<LeafPredictionApp> {
                   )
               ],
             ),
-          )
-      ),
+          )),
     );
   }
 }
@@ -390,17 +404,19 @@ class PredictionResultsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Safely extract the detailed 'predictions' map for individual models.
-    final Map<String, dynamic> predictions = Map<String, dynamic>.from(results['predictions'] ?? {});
+    final Map<String, dynamic> predictions =
+        Map<String, dynamic>.from(results['predictions'] ?? {});
     final String summary = results['summary'] ?? 'No summary available.';
-
+    print(results);
     // Safely extract the ensembled 'class_probabilities' for the main chart.
-    final Map<String, double> ensembledProbabilities = Map<String, double>.from(results['class_probabilities'] ?? {});
+    final Map<String, double> ensembledProbabilities =
+        Map<String, double>.from(results['class_probabilities'] ?? {});
     final List<String> classNames = ensembledProbabilities.keys.toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Prediction Results"),
-        backgroundColor: const Color.fromARGB(255, 68, 255, 0),
+        backgroundColor: const Color.fromARGB(255, 0, 255, 80),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -414,11 +430,13 @@ class PredictionResultsPage extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 'Summary: $summary',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
               child: Wrap(
                 spacing: 8.0,
                 runSpacing: 4.0,
@@ -436,7 +454,8 @@ class PredictionResultsPage extends StatelessWidget {
             // Chart for the Ensembled Prediction
             if (ensembledProbabilities.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
                 child: PredictionBarChart(
                   modelName: "Ensemble Prediction",
                   classNames: classNames,
@@ -452,11 +471,13 @@ class PredictionResultsPage extends StatelessWidget {
             ...predictions.entries.map((entry) {
               final modelData = Map<String, dynamic>.from(entry.value);
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
                 child: PredictionBarChart(
                   modelName: modelData['model'] ?? entry.key,
                   classNames: List<String>.from(modelData['class_names'] ?? []),
-                  modelProbabilities: List<double>.from(modelData['probabilities'] ?? []),
+                  modelProbabilities:
+                      List<double>.from(modelData['probabilities'] ?? []),
                 ),
               );
             }).toList(),
@@ -478,6 +499,28 @@ class PredictionBarChart extends StatelessWidget {
     required this.classNames,
     required this.modelProbabilities,
   });
+
+  // Generate colors for each class
+  Color _getColorForIndex(int index) {
+    final colors = [
+      Colors.blue,
+      Colors.green,
+      Colors.red,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
+      Colors.amber,
+      Colors.deepOrange,
+      Colors.lightGreen,
+      Colors.cyan,
+      Colors.lime,
+      Colors.brown,
+      Colors.blueGrey,
+    ];
+    return colors[index % colors.length];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -508,14 +551,17 @@ class PredictionBarChart extends StatelessWidget {
                 BarChartData(
                   barGroups: List.generate(
                     classNames.length,
-                        (index) => BarChartGroupData(
+                    (index) => BarChartGroupData(
                       x: index,
                       barRods: [
                         BarChartRodData(
                           toY: modelProbabilities[index],
                           width: screenWidth * 0.02,
-                          gradient: const LinearGradient(
-                            colors: [Colors.blue, Colors.lightBlueAccent],
+                          gradient: LinearGradient(
+                            colors: [
+                              _getColorForIndex(index),
+                              _getColorForIndex(index).withOpacity(0.7),
+                            ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                           ),
@@ -543,9 +589,33 @@ class PredictionBarChart extends StatelessWidget {
                         },
                       ),
                     ),
-                    bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < classNames.length) {
+                            return Transform.rotate(
+                              angle:
+                                  -0.5, // Rotate labels for better readability
+                              child: Text(
+                                '${index}',
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.025,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
                   ),
                   gridData: FlGridData(
                     show: true,
@@ -572,7 +642,61 @@ class PredictionBarChart extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 5,),
+        // Legend
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Legend:',
+                style: TextStyle(
+                  fontSize: screenWidth * 0.04,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12.0,
+                runSpacing: 8.0,
+                children: List.generate(
+                  classNames.length,
+                  (index) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: _getColorForIndex(index),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: Colors.grey[300]!,
+                            width: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '$index: ${classNames[index]}',
+                          style: TextStyle(
+                            fontSize: screenWidth * 0.03,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[800],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
       ],
     );
   }
@@ -585,7 +709,7 @@ class CustomCanvasPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Rect rect = Rect.fromLTWH(0, 0, size.width, size.height);
     const Gradient gradient = LinearGradient(
-      colors: [Colors.lightGreenAccent, Color.fromARGB(255, 68, 255, 0)],
+      colors: [Colors.lightGreenAccent, Color.fromARGB(255, 0, 255, 80)],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     );

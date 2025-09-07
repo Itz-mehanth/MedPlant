@@ -6,6 +6,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
+import 'package:medicinal_plant/NewsDetailsPage.dart';
+import 'package:medicinal_plant/PlantSubmissionPage.dart';
 import 'package:medicinal_plant/gallery_page.dart';
 import 'package:medicinal_plant/camera_page.dart';
 import 'package:medicinal_plant/groups_page%20.dart';
@@ -20,20 +22,37 @@ import 'package:medicinal_plant/splash_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medicinal_plant/widget_tree.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:medicinal_plant/LiveAnalysisScreen.dart';
+import 'package:camera/camera.dart';
+import 'package:http/http.dart' as http;
 
+const String serverUrl = 'https://medplant-backend.onrender.com';
+
+Future<void> wakeServer() async {
+  try {
+    final uri = Uri.parse('$serverUrl/health');
+    final response = await http.get(uri).timeout(const Duration(seconds: 5));
+    if (response.statusCode == 200) {
+      debugPrint('✅ Backend is awake');
+    } else {
+      debugPrint('⚠️ Backend responded with ${response.statusCode}');
+    }
+  } catch (e) {
+    debugPrint('⚠️ Failed to wake server: $e');
+  }
+}
 
 
 Future<void> main() async {
 
+  await wakeServer();
 
   WidgetsFlutterBinding.ensureInitialized();
-
-  await dotenv.load(fileName: ".env");
 
   if (kIsWeb) {
     await Firebase.initializeApp(
         options: FirebaseOptions(
-          apiKey: dotenv.env['FIREBASE_API_KEY_WEB']!,
+          apiKey: 'AIzaSyAr3a6eqdxaCsxbC5x2vsnM6t1tqlSg_vI',
           projectId: "medicinal-plant-82aa9",
           messagingSenderId: "1085343678758",
           appId: "1:1085343678758:android:9a2029c33b8ed1017401e7",
@@ -44,7 +63,7 @@ Future<void> main() async {
   } else{
     await Firebase.initializeApp(
       options: FirebaseOptions(
-          apiKey: dotenv.env['FIREBASE_API_KEY_ANDROID']!,
+          apiKey: 'AIzaSyCrbOmzRVSMGhKGvjdI12fVUnSDfUGfWPY',
           authDomain: "medicinal-plant-82aa9.firebaseapp.com",
           databaseURL: "https://medicinal-plant-82aa9-default-rtdb.asia-southeast1.firebasedatabase.app",
           projectId: "medicinal-plant-82aa9",
@@ -67,7 +86,7 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   MyApp({super.key});
-  
+
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -79,11 +98,14 @@ class MyApp extends StatelessWidget {
       routes: {
         '/home': (context) => const WelcomeScreen(),
         '/gallery': (context) => const GalleryPage(),
-        '/camera': (context) => const CameraPage(),
+        '/camera': (context) => const LiveAnalysisScreen(),
         '/login': (context) => const LoginPage(),
         '/profile': (context) => const ProfilePage(),
         '/groups': (context) => GroupsPage(),
         '/search': (context) => const SearchPage(),
+        '/submission': (context) => const PlantSubmissionPage(),
+        '/news_detail': (context) => const NewsDetailPage(),
+        '/all_news': (context) => const AllNewsPage(),
       },
 
       theme: ThemeData(
