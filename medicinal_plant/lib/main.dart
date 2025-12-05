@@ -6,11 +6,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
+import 'package:medicinal_plant/MarketPlaceProfilePage.dart';
 import 'package:medicinal_plant/NewsDetailsPage.dart';
 import 'package:medicinal_plant/PlantSubmissionPage.dart';
+import 'package:medicinal_plant/SocialFeedPage.dart';
 import 'package:medicinal_plant/gallery_page.dart';
 import 'package:medicinal_plant/camera_page.dart';
-import 'package:medicinal_plant/groups_page%20.dart';
+import 'package:medicinal_plant/groups_page .dart';
 import 'package:medicinal_plant/home_page.dart';
 import 'package:medicinal_plant/leaf_prediction_app.dart';
 import 'package:medicinal_plant/login_register_page.dart';
@@ -25,6 +27,10 @@ import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:medicinal_plant/LiveAnalysisScreen.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
+import 'package:medicinal_plant/main_layout.dart';
+import 'package:medicinal_plant/cart_page.dart';
+
+import 'package:medicinal_plant/AyurvedaQAPage.dart';
 
 const String serverUrl = 'https://medplant-backend.onrender.com';
 
@@ -42,9 +48,7 @@ Future<void> wakeServer() async {
   }
 }
 
-
 Future<void> main() async {
-
   await wakeServer();
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -97,15 +101,19 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/home': (context) => const WelcomeScreen(),
+        '/main': (context) => const MainLayout(),
         '/gallery': (context) => const GalleryPage(),
         '/camera': (context) => const LiveAnalysisScreen(),
         '/login': (context) => const LoginPage(),
-        '/profile': (context) => const ProfilePage(),
+        '/profile': (context) => const MarketplaceProfilePage(),
         '/groups': (context) => GroupsPage(),
         '/search': (context) => const SearchPage(),
         '/submission': (context) => const PlantSubmissionPage(),
         '/news_detail': (context) => const NewsDetailPage(),
         '/all_news': (context) => const AllNewsPage(),
+        '/social_feed': (context) => SocialFeedPage(),
+        '/Q&A': (context) => const AyurvedaQAPage(),
+        '/cart': (context) => const CartPage(),
       },
 
       theme: ThemeData(

@@ -3,10 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:medicinal_plant/YoutubeService.dart';
+import 'package:medicinal_plant/Youtube_player_screen.dart';
 import 'package:medicinal_plant/home_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'AyurvedaNewsWidget.dart';
-
 // News Detail Page
 class NewsDetailPage extends StatelessWidget {
   const NewsDetailPage({super.key});
@@ -359,6 +360,8 @@ class _AllNewsPageState extends State<AllNewsPage> {
 
   List<NewsArticle> _allNews = [];
   List<NewsArticle> _filteredNews = [];
+  List<YouTubeVideo> _youtubeVideos = [];
+  bool _isLoadingVideos = true;
   bool _isLoading = true;
   String _selectedCategory = 'All';
   final TextEditingController _searchController = TextEditingController();
@@ -387,6 +390,7 @@ class _AllNewsPageState extends State<AllNewsPage> {
   void initState() {
     super.initState();
     _loadAllNews();
+    _loadYouTubeVideos();
     _searchController.addListener(_filterNews);
   }
 
@@ -394,6 +398,23 @@ class _AllNewsPageState extends State<AllNewsPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadYouTubeVideos() async {
+    setState(() => _isLoadingVideos = true);
+    
+    try {
+      final videos = await YouTubeService.searchAyurvedaVideos();
+      setState(() {
+        _youtubeVideos = videos;
+        _isLoadingVideos = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingVideos = false;
+      });
+      print('Error loading YouTube videos: $e');
+    }
   }
 
   Future<void> _loadAllNews() async {
@@ -532,20 +553,32 @@ class _AllNewsPageState extends State<AllNewsPage> {
           ),
         ),
       ),
-      body: _isLoading
+       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: accentGreen))
-          : _filteredNews.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadAllNews,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredNews.length,
-                    itemBuilder: (context, index) {
-                      return _buildNewsCard(_filteredNews[index]);
-                    },
-                  ),
+          : Column(
+              children: [
+                // YouTube Videos Section
+                _buildYouTubeSection(),
+                // News Articles Section
+                Expanded(
+                  child: _filteredNews.isEmpty
+                      ? _buildEmptyState()
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await _loadAllNews();
+                            await _loadYouTubeVideos();
+                          },
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _filteredNews.length,
+                            itemBuilder: (context, index) {
+                              return _buildNewsCard(_filteredNews[index]);
+                            },
+                          ),
+                        ),
                 ),
+              ],
+            ),
     );
   }
 
@@ -728,6 +761,229 @@ class _AllNewsPageState extends State<AllNewsPage> {
     );
   }
 
+  Widget _buildYouTubeSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Trending Ayurveda Videos',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: darkGray,
+                  ),
+                ),
+                const Spacer(),
+                if (_isLoadingVideos)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.red,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 200,
+            child: _isLoadingVideos
+                ? const Center(child: CircularProgressIndicator(color: Colors.red))
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _youtubeVideos.length,
+                    itemBuilder: (context, index) {
+                      return _buildYouTubeCard(_youtubeVideos[index]);
+                    },
+                  ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  // Add this method for individual YouTube video cards
+  Widget _buildYouTubeCard(YouTubeVideo video) {
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _playYouTubeVideo(video),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              child: Container(
+                height: 100,
+                width: double.infinity,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 100,
+                      color: Colors.grey[200],
+                      child: video.thumbnailUrl.isNotEmpty
+                          ? Image.network(
+                              video.thumbnailUrl,
+                              width: double.infinity,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    strokeWidth: 2,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                print('Thumbnail error: $error');
+                                return Container(
+                                  color: Colors.grey[300],
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      size: 40,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                    ),
+                    // Play button overlay
+                    Center(
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Video Info - Fixed height to prevent overflow
+            Container(
+              height: 85, // Fixed height
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      video.title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: darkGray,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    video.channelTitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 10,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Text(
+                          _formatVideoDate(video.publishedAt),
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.grey[500],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
@@ -744,6 +1000,32 @@ class _AllNewsPageState extends State<AllNewsPage> {
     final difference = now.difference(date);
 
     if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inMinutes}m ago';
+    }
+  }
+
+  // Add this method to handle video playback
+  void _playYouTubeVideo(YouTubeVideo video) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => YouTubePlayerScreen(video: video),
+      ),
+    );
+  }
+
+  // Add this method for better date formatting for videos
+  String _formatVideoDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays > 7) {
+      return '${(difference.inDays / 7).floor()}w ago';
+    } else if (difference.inDays > 0) {
       return '${difference.inDays}d ago';
     } else if (difference.inHours > 0) {
       return '${difference.inHours}h ago';

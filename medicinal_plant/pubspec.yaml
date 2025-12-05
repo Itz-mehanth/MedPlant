@@ -45,7 +45,7 @@ dependencies:
   sign_in_button: ^3.2.0
   firebase_storage: ^12.1.1
   google_sign_in: ^6.2.1
-  image_picker: ^1.1.2
+  image_picker: ^1.2.0
   flutter_map_cancellable_tile_provider: ^3.0.0
   permission_handler: ^11.3.1
   camera: ^0.10.5+5
@@ -56,7 +56,7 @@ dependencies:
   latlong2: ^0.9.1
   fuzzywuzzy: ^1.1.6
   http: ^1.2.2
-  cached_network_image: ^3.1.0
+  cached_network_image: ^3.4.1
   audioplayers: ^6.0.0
   just_audio: ^0.9.39
   intl: any
@@ -78,6 +78,9 @@ dependencies:
   fl_chart: ^0.69.2
   share_plus: ^10.1.4
   socket_io_client: ^3.1.2
+  youtube_player_flutter: ^9.1.2
+  image_cropper: ^9.1.0
+  video_player: ^2.10.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -115,7 +118,6 @@ flutter:
     - assets/icons/logo.png
     - assets/app_background.jpg
     - assets/animations/plantgrowth.json
-    - assets/animations/microphone.json
     - assets/Nooni.jpeg
     - assets/pot1.png
     - assets/pot2.png
@@ -123,7 +125,6 @@ flutter:
     - assets/userIcon.jpg
     - assets/notFound.jpg
     - assets/Leaf labels.txt
-    - assets/Sounds/AI voice.mp3
     - assets/Sounds/cling.wav
 
   # An image asset can refer to one or more resolution-specific "variants", see

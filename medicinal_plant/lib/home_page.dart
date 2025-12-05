@@ -545,9 +545,9 @@ class _ProfessionalPlantCardState extends State<ProfessionalPlantCard>
     return Container(
       width: 140,
       height: 160,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.shimmer,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
           bottomLeft: Radius.circular(16),
         ),
@@ -565,9 +565,9 @@ class _ProfessionalPlantCardState extends State<ProfessionalPlantCard>
     return Container(
       width: 140,
       height: 160,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
           bottomLeft: Radius.circular(16),
         ),
@@ -575,7 +575,7 @@ class _ProfessionalPlantCardState extends State<ProfessionalPlantCard>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.local_florist_rounded,
             size: 32,
             color: AppColors.onSurfaceVariant,
@@ -697,7 +697,7 @@ class _ProfessionalPlantCardState extends State<ProfessionalPlantCard>
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.science_rounded,
             size: 16,
             color: AppColors.primary,
@@ -801,7 +801,7 @@ class _ProfessionalFloatingActionButtonState
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [AppColors.primary, AppColors.accent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -1407,6 +1407,26 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
               color: AppColors.primary,
             ),
           ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            backgroundColor: Colors.white,
+            heroTag: "btn3",
+            onPressed: () => Navigator.pushNamed(context, '/social_feed'),
+            child: const Icon(
+              Icons.video_collection,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            backgroundColor: Colors.white,
+            heroTag: "btn4",
+            onPressed: () => Navigator.pushNamed(context, '/Q&A'),
+            child: const Icon(
+              Icons.question_answer,
+              color: AppColors.primary,
+            ),
+          ),
         ],
       ),
     );
@@ -1698,10 +1718,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   }
 
   Widget _buildContent(List<PlantBoxWidget> widgets) {
-    if (widgets.length < 10) {
+    if (widgets.length < 1) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 32.0),
-        child: PlaceholderRedacted(),
+        child: SizedBox(),
       );
     }
 
