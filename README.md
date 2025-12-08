@@ -43,7 +43,7 @@ Major packages used in this project:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/medicinal-plant-app.git
+    git clone https://github.com/Itz-mehanth/MedPlant.git
     cd medicinal_plant
     ```
 
