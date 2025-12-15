@@ -10,7 +10,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 final String backendURL = 'http://10.57.130.116:5000';
-final String gemini_API_KEY = 'AIzaSyBD_MRK8I-s7v37z7cjgeSfhA-steuW34A';
 
 class LeafPredictionApp extends StatefulWidget {
   // Support multiple input types
