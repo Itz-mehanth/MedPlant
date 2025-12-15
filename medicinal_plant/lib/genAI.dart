@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:medicinal_plant/home_page.dart';
 
-final String gemini_API_KEY = 'AIzaSyBD_MRK8I-s7v37z7cjgeSfhA-steuW34A';
 
 class ChatBotPage extends StatefulWidget {
   const ChatBotPage({super.key});
