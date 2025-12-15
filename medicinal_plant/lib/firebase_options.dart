@@ -34,13 +34,4 @@ class DefaultFirebaseOptions {
   }
 
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCrbOmzRVSMGhKGvjdI12fVUnSDfUGfWPY',
-    appId: '1:1085343678758:android:9a2029c33b8ed1017401e7',
-    messagingSenderId: '1085343678758',
-    projectId: 'medicinal-plant-82aa9',
-    storageBucket: 'medicinal-plant-82aa9.appspot.com',
-  );
-
-
 }
