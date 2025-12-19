@@ -1307,9 +1307,23 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
             stream: FirebaseFirestore.instance
                 .collection('answers')
                 .where('questionId', isEqualTo: widget.question.id)
-                .orderBy('upvotes', descending: true)
+                // Removed orderBy('upvotes') to prevent missing index error
+                .orderBy('createdAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                      const SizedBox(height: 8),
+                      Text('Error loading answers: ${snapshot.error}'),
+                    ],
+                  ),
+                );
+              }
+
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: Padding(
@@ -1361,6 +1375,13 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
       ),
     );
   }
+
+  // ... (keep _buildAnswerCard as is, assume it's roughly lines 1365-1465, wait, replace_file_content needs contiguous block. 
+  // I need to skip the middle part if I want to edit vote logic which is further down.
+  // Actually, I can't use replace_file_content for non-contiguous. I should use multi_replace_file_content.
+  // But wait, the tool call says "Use this tool ONLY when you are making a SINGLE CONTIGUOUS block of edits".
+  // I will use multi_replace_file_content instead.
+
 
   Widget _buildAnswerCard(QueryDocumentSnapshot answerDoc) {
     final answerData = answerDoc.data() as Map<String, dynamic>;
@@ -1639,39 +1660,70 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
     }
 
     try {
-      final voteRef = FirebaseFirestore.instance.collection('votes').doc();
-      
-      // First, get the existing vote document (if any) outside the transaction
-      final existingVoteQuery = await FirebaseFirestore.instance
+      final voteRef = FirebaseFirestore.instance
           .collection('votes')
-          .where('userId', isEqualTo: user.uid)
-          .where('questionId', isEqualTo: widget.question.id)
-          .where('type', isEqualTo: 'question')
-          .limit(1)
-          .get();
+          .doc('${user.uid}_${widget.question.id}');
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final voteSnapshot = await transaction.get(voteRef);
         final questionRef = FirebaseFirestore.instance
             .collection('questions')
             .doc(widget.question.id);
+        
+        // Get fresh question data to ensure counts don't go negative
+        final questionSnapshot = await transaction.get(questionRef);
+        final currentUpvotes = questionSnapshot.data()?['upvotes'] ?? 0;
+        final currentDownvotes = questionSnapshot.data()?['downvotes'] ?? 0;
 
-        if (existingVoteQuery.docs.isNotEmpty) {
-          // User already voted, remove old vote
-          final oldVoteDoc = existingVoteQuery.docs.first;
-          final oldVoteData = oldVoteDoc.data() as Map<String, dynamic>;
+        if (voteSnapshot.exists) {
+          final voteData = voteSnapshot.data() as Map<String, dynamic>;
+          final bool wasUpvote = voteData['isUpvote'] ?? false;
 
-          transaction.delete(oldVoteDoc.reference);
-
-          if (oldVoteData['isUpvote'] == true) {
-            transaction.update(questionRef, {'upvotes': FieldValue.increment(-1)});
+          if (wasUpvote == isUpvote) {
+            // User tapping same button -> Remove vote (Toggle off)
+            transaction.delete(voteRef);
+            if (isUpvote) {
+              transaction.update(questionRef, {'upvotes': (currentUpvotes - 1) < 0 ? 0 : currentUpvotes - 1});
+            } else {
+              transaction.update(questionRef, {'downvotes': (currentDownvotes - 1) < 0 ? 0 : currentDownvotes - 1});
+            }
+            // Update local state to reflect removal
+            if (mounted) {
+              setState(() {
+                if (isUpvote) _hasUpvoted = false;
+                else _hasDownvoted = false;
+              });
+            }
           } else {
-            transaction.update(questionRef, {'downvotes': FieldValue.increment(-1)});
-          }
-        }
+            // User changing vote (Up -> Down or Down -> Up)
+            transaction.update(voteRef, {
+              'isUpvote': isUpvote,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
 
-        // Add new vote if different from existing
-        if (existingVoteQuery.docs.isEmpty ||
-            (existingVoteQuery.docs.first.data() as Map<String, dynamic>)['isUpvote'] != isUpvote) {
+            if (isUpvote) {
+              // Was down, now up
+              transaction.update(questionRef, {
+                'upvotes': currentUpvotes + 1,
+                'downvotes': (currentDownvotes - 1) < 0 ? 0 : currentDownvotes - 1
+              });
+            } else {
+              // Was up, now down
+              transaction.update(questionRef, {
+                'upvotes': (currentUpvotes - 1) < 0 ? 0 : currentUpvotes - 1,
+                'downvotes': currentDownvotes + 1
+              });
+            }
+             // Update local state
+            if (mounted) {
+              setState(() {
+                _hasUpvoted = isUpvote;
+                _hasDownvoted = !isUpvote;
+              });
+            }
+          }
+        } else {
+          // New vote
           transaction.set(voteRef, {
             'userId': user.uid,
             'questionId': widget.question.id,
@@ -1681,21 +1733,20 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
           });
 
           if (isUpvote) {
-            transaction.update(questionRef, {'upvotes': FieldValue.increment(1)});
+            transaction.update(questionRef, {'upvotes': currentUpvotes + 1});
+             if (mounted) setState(() => _hasUpvoted = true);
           } else {
-            transaction.update(questionRef, {'downvotes': FieldValue.increment(1)});
+            transaction.update(questionRef, {'downvotes': currentDownvotes + 1});
+             if (mounted) setState(() => _hasDownvoted = true);
           }
         }
       });
-
-      setState(() {
-        _hasUpvoted = isUpvote;
-        _hasDownvoted = !isUpvote;
-      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error voting: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error voting: $e')),
+        );
+      }
     }
   }
 
@@ -1707,37 +1758,55 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
     }
 
     try {
-      final voteRef = FirebaseFirestore.instance.collection('votes').doc();
-      
-      // First, get the existing vote document (if any) outside the transaction
-      final existingVoteQuery = await FirebaseFirestore.instance
+      // Deterministic ID for answer vote
+      final voteRef = FirebaseFirestore.instance
           .collection('votes')
-          .where('userId', isEqualTo: user.uid)
-          .where('answerId', isEqualTo: answerId)
-          .where('type', isEqualTo: 'answer')
-          .limit(1)
-          .get();
+          .doc('${user.uid}_$answerId');
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final voteSnapshot = await transaction.get(voteRef);
         final answerRef = FirebaseFirestore.instance
             .collection('answers')
             .doc(answerId);
+            
+        // Get fresh answer data to prevent negative counts
+        final answerSnapshot = await transaction.get(answerRef);
+        final currentUpvotes = answerSnapshot.data()?['upvotes'] ?? 0;
+        final currentDownvotes = answerSnapshot.data()?['downvotes'] ?? 0;
 
-        if (existingVoteQuery.docs.isNotEmpty) {
-          final oldVoteDoc = existingVoteQuery.docs.first;
-          final oldVoteData = oldVoteDoc.data() as Map<String, dynamic>;
+        if (voteSnapshot.exists) {
+          final voteData = voteSnapshot.data() as Map<String, dynamic>;
+          final bool wasUpvote = voteData['isUpvote'] ?? false;
 
-          transaction.delete(oldVoteDoc.reference);
-
-          if (oldVoteData['isUpvote'] == true) {
-            transaction.update(answerRef, {'upvotes': FieldValue.increment(-1)});
+          if (wasUpvote == isUpvote) {
+            // Toggle off
+            transaction.delete(voteRef);
+            if (isUpvote) {
+              transaction.update(answerRef, {'upvotes': (currentUpvotes - 1) < 0 ? 0 : currentUpvotes - 1});
+            } else {
+              transaction.update(answerRef, {'downvotes': (currentDownvotes - 1) < 0 ? 0 : currentDownvotes - 1});
+            }
           } else {
-            transaction.update(answerRef, {'downvotes': FieldValue.increment(-1)});
-          }
-        }
+            // switch vote
+            transaction.update(voteRef, {
+              'isUpvote': isUpvote,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
 
-        if (existingVoteQuery.docs.isEmpty ||
-            (existingVoteQuery.docs.first.data() as Map<String, dynamic>)['isUpvote'] != isUpvote) {
+            if (isUpvote) {
+              transaction.update(answerRef, {
+                'upvotes': currentUpvotes + 1,
+                'downvotes': (currentDownvotes - 1) < 0 ? 0 : currentDownvotes - 1
+              });
+            } else {
+              transaction.update(answerRef, {
+                'upvotes': (currentUpvotes - 1) < 0 ? 0 : currentUpvotes - 1,
+                'downvotes': currentDownvotes + 1
+              });
+            }
+          }
+        } else {
+          // New vote
           transaction.set(voteRef, {
             'userId': user.uid,
             'answerId': answerId,
@@ -1747,16 +1816,18 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
           });
 
           if (isUpvote) {
-            transaction.update(answerRef, {'upvotes': FieldValue.increment(1)});
+            transaction.update(answerRef, {'upvotes': currentUpvotes + 1});
           } else {
-            transaction.update(answerRef, {'downvotes': FieldValue.increment(1)});
+            transaction.update(answerRef, {'downvotes': currentDownvotes + 1});
           }
         }
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error voting: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error voting: $e')),
+        );
+      }
     }
   }
 

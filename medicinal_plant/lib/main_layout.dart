@@ -4,6 +4,9 @@ import 'package:medicinal_plant/SocialFeedPage.dart';
 import 'package:medicinal_plant/cart_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:medicinal_plant/marketplace_page.dart';
+
+import 'package:medicinal_plant/home_page.dart';  // Added for WelcomeScreen
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -15,28 +18,21 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
 
-  // We need to keep pages alive to avoid reloading state constantly
   final List<Widget> _pages = [
-    // 0. Feed
+    // 0. Home: Plants Search & Chatbot (WelcomeScreen)
+    const WelcomeScreen(),
+    
+    // 1. Feed: Social Feed
     SocialFeedPage(),
     
-    // 1. Search/Market (Using Profile as placeholder, should probably be separate Market page)
-    // Reusing the social feed or a separate page. For now let's use a placeholder or the Feed again.
-    // The user didn't specify what goes here, usually it's discovery.
-    // Let's use SocialFeedPage again or just a Text placeholder.
-    // Actually, "Marketplace" implies browsing products. 
-    // We don't have a dedicated "All Products" page yet, only profiles have products.
-    // Let's put a placeholder for "Marketplace Explore"
-    Center(child: Text("Marketplace Explore coming soon!")),
-    
-    // 2. Add (Handled by special button, this index shouldn't be reached ideally)
+    // 2. Add: (Placeholder)
     Container(), 
     
-    // 3. Cart
-    const CartPage(),
+    // 3. Marketplace
+    const MarketplacePage(),
     
-    // 4. Profile
-    const MarketplaceProfilePage(), 
+    // 4. Cart
+    const CartPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -73,11 +69,7 @@ class _MainLayoutState extends State<MainLayout> {
                   color: Colors.blue,
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.pushNamed(context, '/create_post'); // Need to ensure route exists or push directly
-                    // SocialFeedPage has CreatePostPage, but it's not exported usually? 
-                    // We'll check route registration. Route '/create_post' isn't registered in main.dart yet.
-                    // We should probably register it or push locally.
-                    // For now, let's assume we need to fix this route.
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CreatePostPage()));
                   }
                 ),
                 _buildOption(
@@ -143,11 +135,11 @@ class _MainLayoutState extends State<MainLayout> {
         showUnselectedLabels: false,
         onTap: _onItemTapped,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explore'),
+          BottomNavigationBarItem(icon: Icon(Icons.spa_outlined), activeIcon: Icon(Icons.spa), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.dynamic_feed), label: 'Feed'),
           BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline, size: 40), activeIcon: Icon(Icons.add_circle, size: 40), label: 'Add'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), activeIcon: Icon(Icons.shopping_bag), label: 'Cart'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.storefront_outlined), activeIcon: Icon(Icons.storefront), label: 'Market'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), activeIcon: Icon(Icons.shopping_cart), label: 'Cart'),
         ],
       ),
     );

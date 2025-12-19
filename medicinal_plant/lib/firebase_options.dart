@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
+import 'package:medicinal_plant/keys.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -32,6 +33,15 @@ class DefaultFirebaseOptions {
         );
     }
   }
+
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: Keys.firebaseAndroidApiKey,
+    appId: Keys.firebaseAndroidAppId,
+    messagingSenderId: Keys.firebaseAndroidMessagingSenderId,
+    projectId: Keys.firebaseAndroidProjectId,
+    storageBucket: Keys.firebaseAndroidStorageBucket,
+  );
 
 
 }

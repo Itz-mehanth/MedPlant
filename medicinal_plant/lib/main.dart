@@ -29,8 +29,11 @@ import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 import 'package:medicinal_plant/main_layout.dart';
 import 'package:medicinal_plant/cart_page.dart';
+import 'package:medicinal_plant/keys.dart';
 
 import 'package:medicinal_plant/AyurvedaQAPage.dart';
+import 'package:medicinal_plant/messages_page.dart';
+import 'package:medicinal_plant/notifications_page.dart';
 
 const String serverUrl = 'https://medplant-backend.onrender.com';
 
@@ -55,27 +58,27 @@ Future<void> main() async {
 
   if (kIsWeb) {
     await Firebase.initializeApp(
-        options: FirebaseOptions(
-          apiKey: 'AIzaSyAr3a6eqdxaCsxbC5x2vsnM6t1tqlSg_vI',
-          projectId: "medicinal-plant-82aa9",
-          messagingSenderId: "1085343678758",
-          appId: "1:1085343678758:android:9a2029c33b8ed1017401e7",
-          storageBucket: 'medicinal-plant-82aa9.appspot.com',
-          databaseURL: "https://medicinal-plant-82aa9.firebaseio.com",
-        )
+      options: const FirebaseOptions(
+          apiKey: Keys.firebaseWebApiKey,
+          authDomain: Keys.firebaseWebAuthDomain,
+          databaseURL: Keys.firebaseWebDatabaseURL,
+          projectId: Keys.firebaseWebProjectId,
+          storageBucket: Keys.firebaseWebStorageBucket,
+          messagingSenderId: Keys.firebaseWebMessagingSenderId,
+          appId: Keys.firebaseWebAppId,
+          measurementId: Keys.firebaseWebMeasurementId
+      ),
     );
   } else{
     await Firebase.initializeApp(
-      options: FirebaseOptions(
-          apiKey: 'AIzaSyCrbOmzRVSMGhKGvjdI12fVUnSDfUGfWPY',
-          authDomain: "medicinal-plant-82aa9.firebaseapp.com",
-          databaseURL: "https://medicinal-plant-82aa9-default-rtdb.asia-southeast1.firebasedatabase.app",
-          projectId: "medicinal-plant-82aa9",
-          storageBucket: "medicinal-plant-82aa9.appspot.com",
-          messagingSenderId: "1085343678758",
-          appId: "1:1085343678758:web:436daced9d3bd3b37401e7",
-          measurementId: "G-7BH4LJYG5R"
-      ),
+        options: const FirebaseOptions(
+          apiKey: Keys.firebaseAndroidApiKey,
+          projectId: Keys.firebaseAndroidProjectId,
+          messagingSenderId: Keys.firebaseAndroidMessagingSenderId,
+          appId: Keys.firebaseAndroidAppId,
+          storageBucket: Keys.firebaseAndroidStorageBucket,
+          databaseURL: Keys.firebaseAndroidDatabaseURL,
+        )
     );
   }
 
@@ -84,14 +87,14 @@ Future<void> main() async {
   );
 
   OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
-  OneSignal.initialize('b2b54cd9-5f66-4f46-9c2d-8a62257a702d');
+  OneSignal.initialize(Keys.oneSignalAppId);
   OneSignal.Notifications.requestPermission(true);
 }
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class MyApp extends StatelessWidget {
   MyApp({super.key});
-
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +117,8 @@ class MyApp extends StatelessWidget {
         '/social_feed': (context) => SocialFeedPage(),
         '/Q&A': (context) => const AyurvedaQAPage(),
         '/cart': (context) => const CartPage(),
+        '/messages': (context) => const MessagesPage(),
+        '/notifications': (context) => const NotificationsPage(),
       },
 
       theme: ThemeData(

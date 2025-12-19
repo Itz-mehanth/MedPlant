@@ -5,8 +5,8 @@ import 'package:medicinal_plant/keys.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 Future<void> sendGroupNotification(List<String> deviceTokens, String message, String? imageUrl) async {
-  final String onesignalAppId = "b2b54cd9-5f66-4f46-9c2d-8a62257a702d"; // Replace with your app ID
-  final String onesignalApiKey = ONE_SIGNAL_KEY; // Replace with your API key
+  final String onesignalAppId = Keys.oneSignalAppId;
+  final String onesignalApiKey = Keys.oneSignalApiKey;
 
   final url = "https://onesignal.com/api/v1/notifications";
   final headers = {

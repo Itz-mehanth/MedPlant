@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
+import 'package:medicinal_plant/utils/notification_service.dart';
 
 // Main Social Feed Page
 class SocialFeedPage extends StatefulWidget {
@@ -722,6 +723,19 @@ class CreatePostPageState extends State<CreatePostPage> {
 
 
 
+  Future<void> _pickMedia(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedMedia = File(pickedFile.path);
+        _mediaType = 'image';
+      });
+    }
+  }
+
+  Future<void> _uploadPost() async {
+    setState(() => _isUploading = true);
+    
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
@@ -762,22 +776,38 @@ class CreatePostPageState extends State<CreatePostPage> {
           .collection('posts')
           .add(postData);
 
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Post uploaded successfully!'),
-            backgroundColor: Color(0xFF10B981)),
+      // System Notification
+      NotificationService.sendNotification(
+        recipientId: user.uid,
+        title: 'Post Uploaded',
+        body: 'Your post is now live!',
+        type: 'system',
+        relatedId: null,
       );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Post uploaded successfully!'),
+              backgroundColor: Color(0xFF10B981)),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Failed to upload post: $e'),
-            backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to upload post: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
     } finally {
-      setState(() => _isUploading = false);
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
     }
   }
+
 }
 
 // Comments Bottom Sheet
@@ -834,7 +864,8 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                 if (!snapshot.hasData)
                   return Center(child: CircularProgressIndicator());
 
-                }
+                final postData = snapshot.data!.data() as Map<String, dynamic>?;
+                final comments = (postData?['comments'] as List?) ?? [];
 
                 return ListView.builder(
                   itemCount: comments.length,

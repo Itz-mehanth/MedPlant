@@ -11,6 +11,7 @@ import 'package:medicinal_plant/utils/global_functions.dart';
 import 'package:medicinal_plant/widget_tree.dart';
 import 'firebase_user_storage.dart';
 import '../auth.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -80,6 +81,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
       // Listen for auth state changes to confirm login
       Auth().authStateChanges.listen((User? user) {
         if (user != null && user.emailVerified) {
+          // Link OneSignal to Firebase User ID
+          OneSignal.login(user.uid);
+          
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(

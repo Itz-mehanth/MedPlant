@@ -6,6 +6,9 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:medicinal_plant/home_page.dart';
 
+import 'package:medicinal_plant/keys.dart';
+
+
 
 class ChatBotPage extends StatefulWidget {
   const ChatBotPage({super.key});
@@ -130,7 +133,7 @@ class _ChatBotPageState extends State<ChatBotPage>
     try {
       final response = await http.post(
         Uri.parse(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=$gemini_API_KEY'),
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${Keys.geminiApiKey}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': [

@@ -11,6 +11,12 @@ import 'dart:io';
 // import 'package:firebase_storage/firebase_storage.dart'; // Removed
 import 'package:url_launcher/url_launcher.dart';
 import 'package:medicinal_plant/providers/cart_provider.dart';
+import 'package:medicinal_plant/chat_page.dart';
+import 'package:medicinal_plant/utils/notification_service.dart';
+import 'package:intl/intl.dart';
+import 'package:medicinal_plant/chat_page.dart';
+import 'package:medicinal_plant/utils/notification_service.dart';
+import 'package:intl/intl.dart';
 
 class MarketplaceProfilePage extends ConsumerStatefulWidget {
   final String? userId;
@@ -131,11 +137,22 @@ class _MarketplaceProfilePageState extends ConsumerState<MarketplaceProfilePage>
               backgroundColor: colorScheme.surface,
               elevation: 0,
               actions: [
-                if (isOwnProfile) ...[
+                if (isOwnProfile)
                   PopupMenuButton<String>(
                     icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
                     onSelected: _handleMenuAction,
                     itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'messages',
+                        onTap: () => Navigator.pushNamed(context, '/messages'),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.chat_bubble_outline, size: 20),
+                            SizedBox(width: 12),
+                            Text('My Messages'),
+                          ],
+                        ),
+                      ),
                       const PopupMenuItem(
                         value: 'edit_profile',
                         child: Row(
@@ -200,7 +217,6 @@ class _MarketplaceProfilePageState extends ConsumerState<MarketplaceProfilePage>
                       ),
                     ],
                   ),
-                ],
               ],
               flexibleSpace: FlexibleSpaceBar(
                 background: FadeTransition(
@@ -256,7 +272,9 @@ class _MarketplaceProfilePageState extends ConsumerState<MarketplaceProfilePage>
                     colors: [Colors.green.shade400, Colors.green.shade900],
                   ),
                 ),
-                child: ClipRRect(
+                child: GestureDetector(
+                  onTap: isOwnProfile ? _uploadProfilePic : null,
+                  child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: photoURL.isNotEmpty
                       ? CachedNetworkImage(
@@ -269,7 +287,9 @@ class _MarketplaceProfilePageState extends ConsumerState<MarketplaceProfilePage>
                         )
                       : Icon(Icons.person, color: Colors.white, size: 45),
                 ),
+                ),
               ),
+
               SizedBox(width: 20),
               Expanded(
                 child: Row(
@@ -990,103 +1010,114 @@ class _MarketplaceProfilePageState extends ConsumerState<MarketplaceProfilePage>
     final priceController = TextEditingController();
     final descriptionController = TextEditingController();
     final stockController = TextEditingController();
+    bool _isUploading = false;
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add Product'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(labelText: 'Product Name'),
-              ),
-              TextField(
-                controller: priceController,
-                decoration: InputDecoration(labelText: 'Price'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: descriptionController,
-                decoration: InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-              ),
-              TextField(
-                controller: stockController,
-                decoration: InputDecoration(labelText: 'Stock Quantity'),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  // Image picker logic would go here
-                  final ImagePicker picker = ImagePicker();
-                  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                  
-                  if (image != null && context.mounted) {
-                    try {
-                      // Show loading
-                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Uploading image...')));
-                       
-                      // Upload to Cloudinary
-                      final url = await CloudinaryService.uploadImage(image.path);
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Add Product'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(labelText: 'Product Name'),
+                ),
+                TextField(
+                  controller: priceController,
+                  decoration: InputDecoration(labelText: 'Price'),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(labelText: 'Description'),
+                  maxLines: 3,
+                ),
+                TextField(
+                  controller: stockController,
+                  decoration: InputDecoration(labelText: 'Stock Quantity'),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: 16),
+                if (_isUploading)
+                  CircularProgressIndicator()
+                else
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      setDialogState(() => _isUploading = true);
                       
-                      if (url == null) {
-                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image upload failed. Check Cloudinary config.')));
-                         return;
+                      try {
+                        // 1. Pick Image (Optional)
+                        final ImagePicker picker = ImagePicker();
+                        final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                        String? imageUrl;
+
+                        if (image != null) {
+                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Uploading image...')));
+                           imageUrl = await CloudinaryService.uploadImage(image.path);
+                           if (imageUrl == null) {
+                             throw Exception("Image upload failed");
+                           }
+                        }
+
+                        // 2. Prepare Data
+                        final productData = {
+                          'name': nameController.text,
+                          'price': double.tryParse(priceController.text) ?? 0.0,
+                          'description': descriptionController.text,
+                          'stock_quantity': int.tryParse(stockController.text) ?? 0,
+                          'images': imageUrl != null ? [imageUrl] : [],
+                          'is_active': true,
+                          'created_at': FieldValue.serverTimestamp(),
+                          'currency': '₹',
+                        };
+
+                        // 3. Save to Firestore
+                        final docRef = await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(currentUser!.uid)
+                            .collection('products')
+                            .add(productData);
+                        
+                        // 4. Send Notification
+                        NotificationService.sendNotification(
+                          recipientId: currentUser!.uid,
+                          title: 'Product Uploaded',
+                          body: 'Your product "${nameController.text}" is live!',
+                          type: 'system',
+                          relatedId: docRef.id, 
+                        );
+
+                        if (mounted) {
+                          Navigator.pop(dialogContext);
+                          _loadProfileData(); 
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Product Added!')));
+                        }
+                      } catch (e) {
+                         print('Error adding product: $e');
+                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      } finally {
+                        if (mounted) {
+                           setDialogState(() => _isUploading = false);
+                        }
                       }
-                      
-                      // Now save product with this Image URL
-                       await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(currentUser!.uid)
-                          .collection('products')
-                          .add({
-                        'name': nameController.text,
-                        'price': double.tryParse(priceController.text) ?? 0.0,
-                        'description': descriptionController.text,
-                        'stock_quantity': int.tryParse(stockController.text) ?? 0,
-                        'images': [url],
-                        'is_active': true,
-                        'created_at': FieldValue.serverTimestamp(),
-                        'currency': '₹',
-                      });
-                      
-                      if (context.mounted) {
-                         Navigator.pop(context);
-                         _loadProfileData();
-                      }
-                    } catch (e) {
-                       print('Error uploading: $e');
-                    }
-                  } else {
-                     // Save without image
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(currentUser!.uid)
-                          .collection('products')
-                          .add({
-                        'name': nameController.text,
-                        'price': double.tryParse(priceController.text) ?? 0.0,
-                        'description': descriptionController.text,
-                        'stock_quantity': int.tryParse(stockController.text) ?? 0,
-                        'images': [],
-                        'is_active': true,
-                        'created_at': FieldValue.serverTimestamp(),
-                         'currency': '₹',
-                      });
-                      Navigator.pop(context);
-                      _loadProfileData();
-                  }
-                },
-                icon: Icon(Icons.add_photo_alternate),
-                label: Text('Save Product'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              ),
-            ],
+                    },
+                    icon: Icon(Icons.add_photo_alternate),
+                    label: Text('Save Product'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  ),
+              ],
+            ),
           ),
+          actions: [
+             TextButton(
+               onPressed: () => Navigator.pop(dialogContext),
+               child: Text("Cancel"),
+             )
+          ],
         ),
       ),
     );
@@ -1141,6 +1172,32 @@ class _MarketplaceProfilePageState extends ConsumerState<MarketplaceProfilePage>
       ),
     );
   }
+
+  Future<void> _uploadProfilePic() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image != null) {
+      try {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Uploading...')));
+        final url = await CloudinaryService.uploadImage(image.path);
+        
+        if (url != null) {
+          await FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).update({'photoURL': url});
+          await currentUser!.updatePhotoURL(url);
+          await currentUser!.reload();
+          currentUser = FirebaseAuth.instance.currentUser;
+          
+          setState(() {
+             profileData?['photoURL'] = url;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated!')));
+        }
+      } catch (e) {
+        print('Error: $e');
+      }
+    }
+  }
 }
 
 class ProductDetailSheet extends StatelessWidget {
@@ -1153,6 +1210,75 @@ class ProductDetailSheet extends StatelessWidget {
     required this.product,
     required this.sellerId,
   });
+
+  Widget _buildReviewsSection(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(sellerId)
+          .collection('products')
+          .doc(productId)
+          .collection('reviews')
+          .orderBy('timestamp', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return SizedBox();
+        final reviews = snapshot.data!.docs;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Reviews (${reviews.length})', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  TextButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AddReviewDialog(sellerId: sellerId, productId: productId),
+                      );
+                    },
+                    icon: Icon(Icons.rate_review),
+                    label: Text('Write Review'),
+                  ),
+                ],
+              ),
+            ),
+            if (reviews.isEmpty)
+              Padding(
+                padding: EdgeInsets.all(20),
+                child: Text('No reviews yet. Be the first!', style: TextStyle(color: Colors.grey)),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: reviews.length,
+                itemBuilder: (context, index) {
+                  final review = reviews[index].data() as Map<String, dynamic>;
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: CachedNetworkImageProvider(review['user_avatar'] ?? ''),
+                      child: review['user_avatar'] == null ? Icon(Icons.person) : null,
+                    ),
+                    title: Text(review['user_name'] ?? 'Anonymous'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: List.generate(5, (i) => Icon(i < (review['rating'] ?? 0) ? Icons.star : Icons.star_border, size: 14, color: Colors.amber))),
+                        Text(review['comment'] ?? ''),
+                      ],
+                    ),
+                  );
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1445,8 +1571,10 @@ class ProductDetailSheet extends StatelessWidget {
                         ],
                       ),
                     )),
-                    SizedBox(height: 100),
                   ],
+                  const SizedBox(height: 20),
+                  _buildReviewsSection(context),
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -1508,6 +1636,89 @@ class ProductDetailSheet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+}
+
+class AddReviewDialog extends StatefulWidget {
+  final String sellerId;
+  final String productId;
+
+  const AddReviewDialog({required this.sellerId, required this.productId});
+
+  @override
+  _AddReviewDialogState createState() => _AddReviewDialogState();
+}
+
+class _AddReviewDialogState extends State<AddReviewDialog> {
+  double _rating = 5;
+  final _commentController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Write a Review'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              return IconButton(
+                onPressed: () => setState(() => _rating = index + 1.0),
+                icon: Icon(
+                  index < _rating ? Icons.star : Icons.star_border,
+                  color: Colors.amber,
+                ),
+              );
+            }),
+          ),
+          TextField(
+            controller: _commentController,
+            decoration: InputDecoration(hintText: 'Share your experience...'),
+            maxLines: 3,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
+        ElevatedButton(
+          onPressed: () async {
+            final currentUser = FirebaseAuth.instance.currentUser;
+            if (currentUser == null) return;
+
+            final reviewData = {
+              'user_id': currentUser.uid,
+              'user_name': currentUser.displayName ?? 'Anonymous',
+              'user_avatar': currentUser.photoURL ?? '',
+              'rating': _rating,
+              'comment': _commentController.text,
+              'timestamp': FieldValue.serverTimestamp(),
+            };
+
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(widget.sellerId)
+                .collection('products')
+                .doc(widget.productId)
+                .collection('reviews')
+                .add(reviewData);
+
+            if (widget.sellerId != currentUser.uid) {
+              NotificationService.sendNotification(
+                recipientId: widget.sellerId,
+                title: 'New Product Review',
+                body: '${currentUser.displayName ?? 'Someone'} reviewed your product.',
+                type: 'review',
+                relatedId: widget.productId,
+              );
+            }
+            Navigator.pop(context);
+          },
+          child: Text('Submit'),
+        ),
+      ],
     );
   }
 }

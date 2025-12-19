@@ -1,5 +1,6 @@
 // ignore_for_file: non_constant_identifier_names
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -142,7 +143,7 @@ void showLoginPrompt(BuildContext context) {
 }
 
 void showErrorDialog(String errorMessage) {
-  final context = MyApp().navigatorKey.currentContext;
+  final context = navigatorKey.currentContext;
   if (context != null) {
     showDialog(
       context: context,
@@ -1117,6 +1118,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   @override
   void initState() {
     super.initState();
+    if (user != null) {
+      OneSignal.login(user!.uid);
+    }
     _initializeAnimations();
     _getUserLanguage();
 
@@ -1407,16 +1411,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
               color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: 12),
-          FloatingActionButton(
-            backgroundColor: Colors.white,
-            heroTag: "btn3",
-            onPressed: () => Navigator.pushNamed(context, '/social_feed'),
-            child: const Icon(
-              Icons.video_collection,
-              color: AppColors.primary,
-            ),
-          ),
+
           const SizedBox(height: 12),
           FloatingActionButton(
             backgroundColor: Colors.white,
@@ -1613,34 +1608,58 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   }
 
   Widget _buildBrandSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Stack(
       children: [
-        _buildPlantIcon('assets/pot1.png'),
-        const SizedBox(width: AppSpacing.md),
-        Column(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              'MEDPLANT',
-              style: AppTypography.brandTitle.copyWith(
-                color: AppColors.onSurface,
-              ),
-            ),
-            Container(
-              height: 3,
-              width: 80,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.accent],
+            _buildPlantIcon('assets/pot1.png'),
+            const SizedBox(width: AppSpacing.md),
+            Column(
+              children: [
+                Text(
+                  'MEDPLANT',
+                  style: AppTypography.brandTitle.copyWith(
+                    color: AppColors.onSurface,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(2),
-              ),
+                Container(
+                  height: 3,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.accent],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(width: AppSpacing.md),
+            _buildPlantIcon('assets/pot2.png'),
           ],
         ),
-        const SizedBox(width: AppSpacing.md),
-        _buildPlantIcon('assets/pot2.png'),
+        Positioned(
+          right: 0,
+          top: 0,
+          bottom: 0,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pushNamed(context, '/messages'),
+                icon: const Icon(Icons.chat_bubble_outline, size: 24),
+                color: AppColors.onSurfaceVariant,
+              ),
+              IconButton(
+                onPressed: () => Navigator.pushNamed(context, '/notifications'),
+                icon: const Icon(Icons.notifications_outlined, size: 28),
+                color: AppColors.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
