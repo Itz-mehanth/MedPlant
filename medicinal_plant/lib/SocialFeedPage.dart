@@ -9,6 +9,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 import 'package:medicinal_plant/utils/notification_service.dart';
+import 'package:share_plus/share_plus.dart';
 
 // Main Social Feed Page
 class SocialFeedPage extends StatefulWidget {
@@ -26,7 +27,7 @@ class _SocialFeedPageState extends State<SocialFeedPage>
   @override
   void initState() {
     super.initState();
-    print('SocialFeedPage: initState');
+
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
     _pageController = PageController();
@@ -35,7 +36,7 @@ class _SocialFeedPageState extends State<SocialFeedPage>
 
   @override
   void dispose() {
-    print('SocialFeedPage: dispose');
+
     _animationController.dispose();
     _pageController.dispose();
     super.dispose();
@@ -43,7 +44,7 @@ class _SocialFeedPageState extends State<SocialFeedPage>
 
   @override
   Widget build(BuildContext context) {
-    print('SocialFeedPage: build');
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -52,26 +53,45 @@ class _SocialFeedPageState extends State<SocialFeedPage>
             FutureBuilder<List<Map<String, dynamic>>>(
               future: _getPosts(),
               builder: (context, snapshot) {
-                print(
-                    'FutureBuilder: connectionState=${snapshot.connectionState}, hasData=${snapshot.hasData}, error=${snapshot.error}');
+
+                if (snapshot.hasError) {
+                   return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red, size: 48),
+                          SizedBox(height: 16),
+                          Text('Something went wrong', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          SelectableText(
+                            '${snapshot.error}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.red.shade700),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  print('FutureBuilder: No posts found');
+
                   return _buildEmptyState();
                 }
                 final posts = snapshot.data!;
-                print('FutureBuilder: Loaded ${posts.length} posts');
+
                 return PageView.builder(
                   controller: _pageController,
                   scrollDirection: Axis.vertical,
                   itemCount: posts.length,
                   onPageChanged: (index) => setState(() {
-                    print('PageView: onPageChanged to $index');
+
                     _currentIndex = index;
                   }),
                   itemBuilder: (context, index) {
                     final postData = posts[index];
-                    print(
-                        'PageView: Building post $index, postId=${postData['postId']}, userId=${postData['userId']}');
+
                     return PostWidget(
                       post: postData['data'],
                       postId: postData['postId'],
@@ -90,7 +110,7 @@ class _SocialFeedPageState extends State<SocialFeedPage>
   }
 
   Widget _buildAppBar() {
-    print('SocialFeedPage: _buildAppBar');
+
     return Positioned(
       top: 0,
       left: 0,
@@ -117,7 +137,7 @@ class _SocialFeedPageState extends State<SocialFeedPage>
             ),
             GestureDetector(
               onTap: () {
-                print('AppBar: CreatePostPage tapped');
+
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => CreatePostPage()));
               },
@@ -142,7 +162,7 @@ class _SocialFeedPageState extends State<SocialFeedPage>
   }
 
   Widget _buildEmptyState() {
-    print('SocialFeedPage: _buildEmptyState');
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -170,7 +190,7 @@ class _SocialFeedPageState extends State<SocialFeedPage>
           SizedBox(height: 32),
           ElevatedButton.icon(
             onPressed: () {
-              print('EmptyState: CreatePostPage tapped');
+
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => CreatePostPage()));
             },
@@ -190,20 +210,20 @@ class _SocialFeedPageState extends State<SocialFeedPage>
 
   /// Fetch posts and include both userId and postId for each post
   Future<List<Map<String, dynamic>>> _getPosts() async {
-    print('SocialFeedPage: _getPosts called');
+
     final snapshot = await FirebaseFirestore.instance
         .collectionGroup('posts')
         .orderBy('created_at', descending: true)
         .limit(20)
         .get();
-    print('SocialFeedPage: _getPosts fetched ${snapshot.docs.length} docs');
+
     return snapshot.docs.map((doc) {
       final segments = doc.reference.path.split('/');
       final userIdIndex = segments.indexOf('users') + 1;
       final userId = userIdIndex > 0 && userIdIndex < segments.length
           ? segments[userIdIndex]
           : '';
-      print('SocialFeedPage: _getPosts docId=${doc.id}, userId=$userId');
+
       return {
         'data': doc.data(),
         'postId': doc.id,
@@ -241,8 +261,7 @@ class _PostWidgetState extends State<PostWidget> {
   @override
   void initState() {
     super.initState();
-    print(
-        'PostWidget: initState postId=${widget.postId}, userId=${widget.userId}');
+
     _initializePost();
     if (widget.post['media_type'] == 'video') {
       _initializeVideo();
@@ -250,7 +269,7 @@ class _PostWidgetState extends State<PostWidget> {
   }
 
   void _initializePost() {
-    print('PostWidget: _initializePost');
+
     _likeCount = (widget.post['likes'] as List?)?.length ?? 0;
     _commentCount = (widget.post['comments'] as List?)?.length ?? 0;
     _isLiked =
@@ -259,15 +278,14 @@ class _PostWidgetState extends State<PostWidget> {
     _isSaved =
         (widget.post['saved_by'] as List?)?.contains(widget.currentUser?.uid) ??
             false;
-    print(
-        'PostWidget: _initializePost likeCount=$_likeCount, commentCount=$_commentCount, isLiked=$_isLiked, isSaved=$_isSaved');
+
   }
 
   void _initializeVideo() {
-    print('PostWidget: _initializeVideo');
+
     _videoController = VideoPlayerController.network(widget.post['media_url'])
       ..initialize().then((_) {
-        print('PostWidget: Video initialized');
+
         setState(() {});
         _videoController?.setLooping(true);
         _videoController?.play();
@@ -276,14 +294,14 @@ class _PostWidgetState extends State<PostWidget> {
 
   @override
   void dispose() {
-    print('PostWidget: dispose');
+
     _videoController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    print('PostWidget: build postId=${widget.postId}');
+
     return Stack(
       children: [
         _buildMediaContent(),
@@ -295,7 +313,7 @@ class _PostWidgetState extends State<PostWidget> {
   }
 
   Widget _buildMediaContent() {
-    print('PostWidget: _buildMediaContent');
+
     if (widget.post['media_type'] == 'video') {
       return _videoController?.value.isInitialized == true
           ? VideoPlayer(_videoController!)
@@ -321,7 +339,7 @@ class _PostWidgetState extends State<PostWidget> {
   }
 
   Widget _buildOverlay() {
-    print('PostWidget: _buildOverlay');
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -335,7 +353,7 @@ class _PostWidgetState extends State<PostWidget> {
   }
 
   Widget _buildUserInfo() {
-    print('PostWidget: _buildUserInfo');
+
     return Positioned(
       bottom: 100,
       left: 16,
@@ -401,7 +419,7 @@ class _PostWidgetState extends State<PostWidget> {
   }
 
   Widget _buildActionButtons() {
-    print('PostWidget: _buildActionButtons');
+
     return Positioned(
       bottom: 100,
       right: 16,
@@ -442,12 +460,12 @@ class _PostWidgetState extends State<PostWidget> {
       required Color color,
       required VoidCallback onTap,
       int? count}) {
-    print('PostWidget: _buildActionButton icon=$icon, count=$count');
+
     return Column(
       children: [
         GestureDetector(
           onTap: () {
-            print('PostWidget: ActionButton tapped icon=$icon');
+
             onTap();
           },
           child: Container(
@@ -472,14 +490,14 @@ class _PostWidgetState extends State<PostWidget> {
   }
 
   String _formatCount(int count) {
-    print('PostWidget: _formatCount $count');
+
     if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
     if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
     return count.toString();
   }
 
   void _toggleLike() async {
-    print('PostWidget: _toggleLike');
+
     setState(() {
       _isLiked = !_isLiked;
       _likeCount += _isLiked ? 1 : -1;
@@ -491,20 +509,26 @@ class _PostWidgetState extends State<PostWidget> {
         .collection('posts')
         .doc(widget.postId);
     if (_isLiked) {
-      print('PostWidget: Adding like for user ${widget.currentUser?.uid}');
+
       await docRef.update({
         'likes': FieldValue.arrayUnion([widget.currentUser?.uid])
       });
-    } else {
-      print('PostWidget: Removing like for user ${widget.currentUser?.uid}');
-      await docRef.update({
-        'likes': FieldValue.arrayRemove([widget.currentUser?.uid])
       });
+    }
+
+    if (_isLiked && widget.userId != widget.currentUser?.uid) {
+      NotificationService.sendNotification(
+        recipientId: widget.userId,
+        title: 'New Like',
+        body: '${widget.currentUser?.displayName ?? 'Someone'} liked your post',
+        type: 'like',
+        relatedId: widget.postId,
+      );
     }
   }
 
   void _toggleSave() async {
-    print('PostWidget: _toggleSave');
+
     setState(() {
       _isSaved = !_isSaved;
     });
@@ -514,12 +538,12 @@ class _PostWidgetState extends State<PostWidget> {
         .collection('posts')
         .doc(widget.postId);
     if (_isSaved) {
-      print('PostWidget: Saving post for user ${widget.currentUser?.uid}');
+
       await docRef.update({
         'saved_by': FieldValue.arrayUnion([widget.currentUser?.uid])
       });
     } else {
-      print('PostWidget: Unsaving post for user ${widget.currentUser?.uid}');
+
       await docRef.update({
         'saved_by': FieldValue.arrayRemove([widget.currentUser?.uid])
       });
@@ -527,7 +551,7 @@ class _PostWidgetState extends State<PostWidget> {
   }
 
   void _showComments() {
-    print('PostWidget: _showComments');
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -537,13 +561,31 @@ class _PostWidgetState extends State<PostWidget> {
     );
   }
 
-  void _sharePost() {
-    print('PostWidget: _sharePost');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text('Share functionality coming soon!'),
-          backgroundColor: Colors.green),
-    );
+  void _sharePost() async {
+    final caption = widget.post['caption'] ?? 'Check out this post!';
+    final mediaUrl = widget.post['media_url'] ?? '';
+    final username = widget.post['username'] ?? 'MedPlant User';
+    
+    final shareText = '$caption\n\nPosted by $username\n$mediaUrl\n\nSent via MedPlant App';
+    
+    try {
+      await Share.share(shareText);
+       
+      // Notify owner if shared by someone else
+      if (widget.userId != widget.currentUser?.uid) {
+        NotificationService.sendNotification(
+          recipientId: widget.userId,
+          title: 'Post Shared',
+          body: '${widget.currentUser?.displayName ?? 'Someone'} shared your post',
+          type: 'share',
+          relatedId: widget.postId,
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error sharing: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 }
 
@@ -830,23 +872,26 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
           Container(
             padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            ),
             child: Row(
               children: [
                 Text('Comments',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600)),
+                        color: Colors.black87,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700)),
                 Spacer(),
                 IconButton(
-                  icon: Icon(Icons.close, color: Colors.white),
+                  icon: Icon(Icons.close, color: Colors.black54),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -862,30 +907,62 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData)
-                  return Center(child: CircularProgressIndicator());
+                  return Center(child: CircularProgressIndicator(color: Colors.green));
 
                 final postData = snapshot.data!.data() as Map<String, dynamic>?;
                 final comments = (postData?['comments'] as List?) ?? [];
 
+                if (comments.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey.shade300),
+                        SizedBox(height: 16),
+                        Text('No comments yet', style: TextStyle(color: Colors.grey.shade500)),
+                      ],
+                    ),
+                  );
+                }
+
                 return ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: comments.length,
                   itemBuilder: (context, index) {
                     final comment = comments[index] as Map<String, dynamic>;
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: comment['user_avatar'] != null
-                            ? CachedNetworkImageProvider(comment['user_avatar'])
-                            : null,
-                        child: comment['user_avatar'] == null
-                            ? Icon(Icons.person, color: Colors.white)
-                            : null,
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Colors.grey.shade200,
+                            backgroundImage: comment['user_avatar'] != null && comment['user_avatar'].isNotEmpty
+                                ? CachedNetworkImageProvider(comment['user_avatar'])
+                                : null,
+                            child: comment['user_avatar'] == null || comment['user_avatar'].isEmpty
+                                ? Icon(Icons.person, color: Colors.grey.shade400, size: 20)
+                                : null,
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(comment['username'] ?? 'Anonymous',
+                                    style: TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600)),
+                                SizedBox(height: 4),
+                                Text(comment['text'] ?? '',
+                                    style: TextStyle(color: Colors.black87, fontSize: 14)),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      title: Text(comment['username'] ?? 'Anonymous',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600)),
-                      subtitle: Text(comment['text'] ?? '',
-                          style: TextStyle(color: Colors.grey[300])),
                     );
                   },
                 );
@@ -893,19 +970,27 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             ),
           ),
           Container(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 8 + MediaQuery.of(context).viewInsets.bottom),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))
+              ],
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _commentController,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Add a comment...',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: Colors.grey),
+                        borderSide: BorderSide.none,
                       ),
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -913,9 +998,12 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                   ),
                 ),
                 SizedBox(width: 8),
-                IconButton(
-                  icon: Icon(Icons.send, color: Color(0xFF4F46E5)),
-                  onPressed: _addComment,
+                CircleAvatar(
+                  backgroundColor: Colors.green.shade50,
+                  child: IconButton(
+                    icon: Icon(Icons.send, color: Colors.green.shade600, size: 20),
+                    onPressed: _addComment,
+                  ),
                 ),
               ],
             ),
@@ -939,7 +1027,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
       'username': userData['displayName'] ?? userData['email'] ?? 'Anonymous',
       'user_avatar': userData['photoURL'] ?? '',
       'text': _commentController.text.trim(),
-      'created_at': FieldValue.serverTimestamp(),
+      'created_at': DateTime.now().toIso8601String(), // Use simpler timestamp for array
     };
 
     await FirebaseFirestore.instance
@@ -950,6 +1038,16 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
         .update({
       'comments': FieldValue.arrayUnion([comment])
     });
+
+    if (widget.userId != currentUser!.uid) {
+      NotificationService.sendNotification(
+        recipientId: widget.userId,
+        title: 'New Comment',
+        body: '${userData['displayName'] ?? 'Someone'} commented on your post',
+        type: 'comment',
+        relatedId: widget.postId,
+      );
+    }
 
     _commentController.clear();
   }

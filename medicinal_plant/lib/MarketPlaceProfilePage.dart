@@ -16,6 +16,7 @@ import 'package:medicinal_plant/utils/notification_service.dart';
 import 'package:intl/intl.dart';
 import 'package:medicinal_plant/chat_page.dart';
 import 'package:medicinal_plant/utils/notification_service.dart';
+import 'package:medicinal_plant/SavedPostsPage.dart';
 import 'package:intl/intl.dart';
 
 class MarketplaceProfilePage extends ConsumerStatefulWidget {
@@ -142,6 +143,17 @@ class _MarketplaceProfilePageState extends ConsumerState<MarketplaceProfilePage>
                     icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
                     onSelected: _handleMenuAction,
                     itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'saved_posts',
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SavedPostsPage())),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.bookmark_border, size: 20),
+                            SizedBox(width: 12),
+                            Text('Saved Posts'),
+                          ],
+                        ),
+                      ),
                       PopupMenuItem(
                         value: 'messages',
                         onTap: () => Navigator.pushNamed(context, '/messages'),

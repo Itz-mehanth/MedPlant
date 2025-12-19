@@ -215,6 +215,22 @@ class _AyurvedaQAPageState extends State<AyurvedaQAPage>
     return StreamBuilder<QuerySnapshot>(
       stream: _getQuestionsStream(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                   const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                   const SizedBox(height: 8),
+                   SelectableText('Error: ${snapshot.error}', textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
+        }
+
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: accentGreen));
         }
@@ -248,6 +264,22 @@ class _AyurvedaQAPageState extends State<AyurvedaQAPage>
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                   const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                   const SizedBox(height: 8),
+                   SelectableText('Error: ${snapshot.error}', textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
+        }
+
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: accentGreen));
         }
@@ -281,6 +313,22 @@ class _AyurvedaQAPageState extends State<AyurvedaQAPage>
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                   const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                   const SizedBox(height: 8),
+                   SelectableText('Error: ${snapshot.error}', textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
+        }
+
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: accentGreen));
         }
@@ -1307,8 +1355,7 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
             stream: FirebaseFirestore.instance
                 .collection('answers')
                 .where('questionId', isEqualTo: widget.question.id)
-                // Removed orderBy('upvotes') to prevent missing index error
-                .orderBy('createdAt', descending: true)
+                .orderBy('upvotes', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {

@@ -11,6 +11,7 @@ import 'package:medicinal_plant/plant_details_page.dart';
 import 'package:medicinal_plant/utils/global_functions.dart';
 import 'package:medicinal_plant/widget_tree.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 // Professional Color Palette
 class AppColors {
@@ -84,15 +85,19 @@ class _SearchPageState extends State<SearchPage>
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   // Animation Controllers
+  // Animation Controllers
   late AnimationController _fadeController;
   late AnimationController _scaleController;
   late AnimationController _slideController;
+  late AnimationController _listeningPulseController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
 
   // State Variables
+  late stt.SpeechToText _speech;
   bool _speechEnabled = false;
+  bool _isListening = false;
   String _lastWords = '';
   List<String> plantDetails = [];
   List<String> searchSuggestions = [];
@@ -102,10 +107,12 @@ class _SearchPageState extends State<SearchPage>
   DateTime? _startListeningTimestamp;
   Timer? _timer;
   Timer? _debounceTimer;
+  final ValueNotifier<String> _currentWordsNotifier = ValueNotifier('');
 
   @override
   void initState() {
     super.initState();
+    _speech = stt.SpeechToText();
     _initializeAnimations();
     _initializeSpeech();
     _setupListeners();
@@ -124,6 +131,12 @@ class _SearchPageState extends State<SearchPage>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
+    _listeningPulseController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+      lowerBound: 1.0,
+      upperBound: 1.2,
+    )..repeat(reverse: true);
 
     _fadeAnimation = Tween<double>(
       begin: 0.0,
@@ -155,6 +168,21 @@ class _SearchPageState extends State<SearchPage>
     _slideController.forward();
   }
 
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _scaleController.dispose();
+    _slideController.dispose();
+    _listeningPulseController.dispose();
+    _searchController.dispose();
+    _focusNode.dispose();
+    _audioPlayer.dispose();
+    _timer?.cancel();
+    _debounceTimer?.cancel();
+    _currentWordsNotifier.dispose();
+    super.dispose();
+  }
+
   void _setupListeners() {
     _searchController.addListener(_onSearchChanged);
     _focusNode.addListener(() {
@@ -169,8 +197,12 @@ class _SearchPageState extends State<SearchPage>
   }
 
   void _initializeSpeech() async {
+    bool available = await _speech.initialize(
+      onStatus: (status) => print('onStatus: $status'),
+      onError: (errorNotification) => print('onError: $errorNotification'),
+    );
     setState(() {
-      _speechEnabled = true; // Initialize based on your speech service
+      _speechEnabled = available;
     });
   }
 
@@ -789,22 +821,120 @@ class _SearchPageState extends State<SearchPage>
     HapticFeedback.mediumImpact();
     _playSound();
     
-    // Implement your speech recognition logic here
     setState(() {
+      _isListening = true;
       _startListeningTimestamp = DateTime.now();
+    });
+
+    _showListeningDialog();
+
+    await _speech.listen(
+      onResult: (result) {
+        setState(() {
+          _lastWords = result.recognizedWords;
+          _currentWordsNotifier.value = _lastWords;
+          _searchController.text = _lastWords;
+          _onSearchChanged(); // Trigger search suggestions update
+        });
+      },
+    );
+  }
+
+  void _stopListening() async {
+    await _speech.stop();
+    setState(() {
+      _isListening = false;
     });
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _focusNode.dispose();
-    _audioPlayer.dispose();
-    _fadeController.dispose();
-    _scaleController.dispose();
-    _slideController.dispose();
-    _debounceTimer?.cancel();
-    _timer?.cancel();
-    super.dispose();
+  void _showListeningDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(32),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   const Text(
+                    'Listening...',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  // Pulsing Animation
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 1.0, end: 1.2),
+                    duration: const Duration(milliseconds: 1000),
+                    curve: Curves.easeInOut,
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.mic_rounded,
+                            size: 48,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      );
+                    },
+                    onEnd: () {}, // Loop manually if needed, but this is a simple one-shot for demo. For continuous, use an AnimationController.
+                  ),
+                  const SizedBox(height: 32),
+                  ValueListenableBuilder<String>(
+                    valueListenable: _currentWordsNotifier,
+                    builder: (context, value, child) {
+                      return Text(
+                        value.isEmpty ? 'Say a plant name...' : value,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () {
+                      _stopListening();
+                      Navigator.pop(context);
+                      if (_searchController.text.isNotEmpty) {
+                        _fetchSearchSuggestions(_searchController.text);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: const CircleBorder(),
+                      padding: const EdgeInsets.all(20),
+                    ),
+                    child: const Icon(Icons.stop, color: Colors.white, size: 32),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    ).then((_) => _stopListening());
   }
+
+
 }
