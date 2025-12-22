@@ -28,6 +28,8 @@ class _GalleryPageState extends State<GalleryPage>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
+
+
   @override
   void initState() {
     super.initState();
