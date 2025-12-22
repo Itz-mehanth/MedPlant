@@ -47,3 +47,6 @@ app.*.map.json
 
 
 .env
+
+# API Keys and Secrets
+lib/keys.dart
