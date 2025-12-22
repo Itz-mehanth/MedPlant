@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import "home_page.dart";
+import 'package:medicinal_plant/services/plant_classifier.dart';
 
 
 const String serverUrl = 'https://medplant-backend.onrender.com';
@@ -21,6 +22,10 @@ class LiveAnalysisScreenState extends State<LiveAnalysisScreen>
   late Future<void> _initializeControllerFuture;
   late IO.Socket socket;
   Timer? _frameTimer;
+
+  // Offline Classifier
+  final PlantClassifier _offlineClassifier = PlantClassifier();
+  bool _isOfflineMode = false;
 
   List<Map<String, dynamic>>? _predictionResults;
   String _serverStatus = 'Connecting...';
@@ -40,6 +45,7 @@ class LiveAnalysisScreenState extends State<LiveAnalysisScreen>
     _initAnimations();
     _initCamera();
     _initSocket();
+    _offlineClassifier.loadModel();
   }
 
   void _initAnimations() {
@@ -97,29 +103,62 @@ class LiveAnalysisScreenState extends State<LiveAnalysisScreen>
     socket = IO.io(serverUrl, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': true,
+      'timeout': 5000,
+    });
+
+    // Auto-switch to offline if not connected in 5 seconds
+    Timer(const Duration(seconds: 5), () {
+      if (mounted && !socket.connected && !_isOfflineMode) {
+        setState(() {
+          _isOfflineMode = true;
+          _serverStatus = 'Connection Timed Out';
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚠️ Server unreachable. Switched to Offline Mode.'),
+              backgroundColor: Colors.amber,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        });
+      }
     });
 
     socket.onConnect((_) {
-      setState(() {
-        _serverStatus = 'Connected';
-      });
+      if (mounted) {
+        setState(() {
+          _serverStatus = 'Connected';
+        });
+      }
+    });
+
+    socket.onConnectError((err) {
+       print('Socket Connect Error: $err');
+       if (mounted && !_isOfflineMode) {
+         setState(() {
+           _isOfflineMode = true; // Auto-switch on error
+         });
+       }
     });
 
     socket.on('prediction_result', (data) {
-      if (data != null && data['results'] is List) {
-        setState(() {
-          _predictionResults = List<Map<String, dynamic>>.from(data['results']);
-          _isAnalyzing = false;
-        });
-        _scanController.stop();
-        _slideController.forward();
+      if (!_isOfflineMode && data != null && data['results'] is List) {
+        if (mounted) {
+          setState(() {
+            _predictionResults = List<Map<String, dynamic>>.from(data['results']);
+            _isAnalyzing = false;
+          });
+          _scanController.stop();
+          _slideController.forward();
+        }
       }
     });
 
     socket.onDisconnect((_) {
-      setState(() {
-        _serverStatus = 'Disconnected';
-      });
+      if (mounted) {
+        setState(() {
+          _serverStatus = 'Disconnected';
+        });
+      }
     });
 
     socket.onError((err) => print('Socket Error: $err'));
@@ -130,25 +169,54 @@ class LiveAnalysisScreenState extends State<LiveAnalysisScreen>
       if (!_controller.value.isInitialized) return;
 
       try {
-        setState(() {
-          _isAnalyzing = true;
-        });
+        if (mounted) {
+          setState(() {
+            _isAnalyzing = true;
+          });
+        }
         _slideController.reset();
         _scanController.repeat();
 
         final image = await _controller.takePicture();
-        final bytes = await image.readAsBytes();
-        final base64Image = base64Encode(bytes);
+        
+        if (_isOfflineMode) {
+           // Offline Prediction
+           final bytes = await image.readAsBytes();
+           final predictionMap = await _offlineClassifier.predictFromBytes(bytes);
+           final top5 = predictionMap['top_5'] as List<dynamic>;
+           
+           if (mounted) {
+             setState(() {
+               _predictionResults = top5.map((r) {
+                 return {
+                   'type': 'Plant', // Detection logic simpler here
+                   'predicted_class': r['label'],
+                   'binary_confidence': r['confidence'],
+                   'classifier_confidence': r['confidence'],
+                 };
+               }).toList();
+               _isAnalyzing = false;
+             });
+             _scanController.stop();
+             _slideController.forward();
+           }
+        } else {
+          // Online Prediction (Socket.IO)
+          final bytes = await image.readAsBytes();
+          final base64Image = base64Encode(bytes);
 
-        if (socket.connected) {
-          socket
-              .emit('frame', {'image': 'data:image/jpeg;base64,$base64Image'});
+          if (socket.connected) {
+            socket.emit('frame', {'image': 'data:image/jpeg;base64,$base64Image'});
+          }
         }
       } catch (e) {
-        setState(() {
-          _isAnalyzing = false;
-        });
-        _scanController.stop();
+        print("Analysis Error: $e");
+        if (mounted) {
+          setState(() {
+            _isAnalyzing = false;
+          });
+          _scanController.stop();
+        }
       }
     });
   }
@@ -261,64 +329,72 @@ class LiveAnalysisScreenState extends State<LiveAnalysisScreen>
   }
 
   Widget _buildMobileConnectionStatus() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 400;
-
-    Color statusColor;
-    IconData statusIcon;
-    String statusText;
-
-    switch (_serverStatus) {
-      case 'Connected':
-        statusColor = const Color(0xFF059669);
-        statusIcon = Icons.wifi;
-        statusText = isSmallScreen ? 'On' : 'Online';
-        break;
-      case 'Connecting...':
-        statusColor = const Color(0xFF0EA5E9);
-        statusIcon = Icons.sync;
-        statusText = isSmallScreen ? '...' : 'Connecting';
-        break;
-      default:
-        statusColor = const Color(0xFFDC2626);
-        statusIcon = Icons.wifi_off;
-        statusText = isSmallScreen ? 'Off' : 'Offline';
-    }
-
-    return AnimatedBuilder(
-      animation: _pulseAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _serverStatus == 'Connecting...' ? _pulseAnimation.value : 1.0,
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isSmallScreen ? 8 : 12,
-              vertical: isSmallScreen ? 4 : 6,
-            ),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: statusColor.withOpacity(0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(statusIcon,
-                    color: statusColor, size: isSmallScreen ? 14 : 16),
-                SizedBox(width: isSmallScreen ? 4 : 6),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Status Text
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _isOfflineMode ? 'OFFLINE' : 'ONLINE',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  color: _isOfflineMode ? Colors.amber[800] : const Color(0xFF059669),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              if (!_isOfflineMode)
                 Text(
-                  statusText,
+                  socket.connected ? 'Connected' : 'Connecting...',
                   style: TextStyle(
-                    color: statusColor,
-                    fontSize: isSmallScreen ? 10 : 12,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 8,
+                    color: Colors.grey[600],
                   ),
                 ),
-              ],
+            ],
+          ),
+          const SizedBox(width: 8),
+          // Toggle Switch
+          Transform.scale(
+            scale: 0.8,
+            child: Switch(
+              value: !_isOfflineMode, // True = Online
+              activeColor: const Color(0xFF059669),
+              activeTrackColor: const Color(0xFF059669).withOpacity(0.2),
+              inactiveThumbColor: Colors.amber[800],
+              inactiveTrackColor: Colors.amber[100],
+              onChanged: (bool isOnline) {
+                setState(() {
+                  _isOfflineMode = !isOnline;
+                  _isAnalyzing = false;
+                  _predictionResults = null;
+                });
+                
+                if (isOnline) {
+                   socket.connect();
+                }
+              },
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 

@@ -1,0 +1,2 @@
+C:/Flutter projects/medicinal_plant/medicinal_plant/android/app/.cxx/Debug/4v4f5c1e/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Flutter projects/medicinal_plant/medicinal_plant/android/app/.cxx/Debug/4v4f5c1e/arm64-v8a/CMakeFiles/rebuild_cache.dir

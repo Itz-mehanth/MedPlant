@@ -86,9 +86,34 @@ Future<void> main() async {
     ProviderScope(child: MyApp()),
   );
 
+  // OneSignal Setup
   OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
   OneSignal.initialize(Keys.oneSignalAppId);
   OneSignal.Notifications.requestPermission(true);
+  
+  // Handle notification clicks
+  OneSignal.Notifications.addClickListener((event) {
+    print('OneSignal: Notification clicked!');
+    print('Notification data: ${event.notification.additionalData}');
+    
+    // Navigate based on notification type
+    final data = event.notification.additionalData;
+    if (data != null) {
+      final type = data['type'] as String?;
+      final relatedId = data['relatedId'] as String?;
+      
+      // Wait a bit for app to be ready
+      Future.delayed(Duration(milliseconds: 500), () {
+        if (type == 'like' || type == 'comment' || type == 'share') {
+          navigatorKey.currentState?.pushNamed('/social_feed');
+        } else if (type == 'review' || type == 'follow') {
+          navigatorKey.currentState?.pushNamed('/profile');
+        } else if (type == 'system') {
+          navigatorKey.currentState?.pushNamed('/notifications');
+        }
+      });
+    }
+  });
 }
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

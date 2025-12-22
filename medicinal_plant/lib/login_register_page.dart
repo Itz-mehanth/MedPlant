@@ -79,10 +79,36 @@ class _LoginPageState extends ConsumerState<LoginPage>
       );
 
       // Listen for auth state changes to confirm login
-      Auth().authStateChanges.listen((User? user) {
+      Auth().authStateChanges.listen((User? user) async {
         if (user != null && user.emailVerified) {
           // Link OneSignal to Firebase User ID
+          print('🔔 Logging in to OneSignal with UID: ${user.uid}');
+          
+          // Wait a bit for OneSignal to be ready
+          await Future.delayed(Duration(seconds: 1));
+          
           OneSignal.login(user.uid);
+          
+          // Wait for login to complete
+          await Future.delayed(Duration(seconds: 2));
+          
+          // Check subscription status
+          final playerId = OneSignal.User.pushSubscription.id;
+          final isSubscribed = OneSignal.User.pushSubscription.optedIn ?? false;
+          
+          print('✅ OneSignal Login Complete:');
+          print('   Player ID: $playerId');
+          print('   User ID: ${user.uid}');
+          print('   Subscribed: $isSubscribed');
+          
+          if (playerId == null) {
+            print('⚠️ WARNING: Player ID is null!');
+          }
+          if (!isSubscribed) {
+            print('⚠️ WARNING: User not subscribed to push notifications!');
+            // Request permission again
+            await OneSignal.Notifications.requestPermission(true);
+          }
           
           Navigator.pushReplacement(
             context,

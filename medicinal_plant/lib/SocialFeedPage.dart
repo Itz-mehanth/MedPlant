@@ -513,6 +513,9 @@ class _PostWidgetState extends State<PostWidget> {
       await docRef.update({
         'likes': FieldValue.arrayUnion([widget.currentUser?.uid])
       });
+    } else {
+      await docRef.update({
+        'likes': FieldValue.arrayRemove([widget.currentUser?.uid])
       });
     }
 

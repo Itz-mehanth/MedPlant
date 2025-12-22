@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:medicinal_plant/login_register_page.dart';
 import 'package:medicinal_plant/widget_tree.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   // ignore: use_key_in_widget_constructors
@@ -21,17 +22,45 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     // Start the timer to navigate after a few seconds
-    Timer(const Duration(seconds: 7), () {
+    Timer(const Duration(seconds: 7), () async {
       // Navigate to the next screen after 3 seconds == n
-      user == null
-          ? Navigator.pushNamed(context, '/login')
-          : user!.emailVerified
-              ? Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (BuildContext context) => const WidgetTree()
-                  ),
-                )
-              : Navigator.pushNamed(context, '/login');
+      if (user != null && user!.emailVerified) {
+        // Log in to OneSignal for persisted session
+        print('🔔 [Splash] Persisted user found. Logging into OneSignal: ${user!.uid}');
+        
+        // CRITICAL: Request permission first
+        print('🔔 [Splash] Requesting notification permission...');
+        final hasPermission = await OneSignal.Notifications.requestPermission(true);
+        print('🔔 [Splash] Permission granted: $hasPermission');
+        
+        // Login to OneSignal
+        OneSignal.login(user!.uid);
+        
+        // Wait for login to complete
+        await Future.delayed(Duration(seconds: 3));
+        
+        // Check subscription status
+        final playerId = OneSignal.User.pushSubscription.id;
+        final isSubscribed = OneSignal.User.pushSubscription.optedIn ?? false;
+        
+        print('🔔 [Splash] OneSignal Status:');
+        print('   Player ID: $playerId');
+        print('   Subscribed: $isSubscribed');
+        
+        if (playerId == null || playerId.isEmpty) {
+          print('❌ [Splash] ERROR: Player ID is null/empty! OneSignal not working.');
+          print('   This means push notifications will NOT work.');
+          print('   Check: 1) Notification permission 2) OneSignal App ID 3) Internet connection');
+        }
+        
+        Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (BuildContext context) => const WidgetTree()
+              ),
+            );
+      } else {
+        Navigator.pushNamed(context, '/login');
+      }
     });
   }
 
